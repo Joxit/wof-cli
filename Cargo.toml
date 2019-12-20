@@ -1,0 +1,15 @@
+[package]
+name = "wof-cli"
+version = "0.1.0"
+authors = ["Jones Magloire @Joxit"]
+edition = "2018"
+license = "MIT"
+license-file = "LICENSE"
+autobins = false
+
+[[bin]]
+name = "wof"
+path = "src/main.rs"
+
+[dependencies]
+structopt = "0.3"
