@@ -1,3 +1,4 @@
+use crate::export::Export;
 use crate::shapefile::Shapefile;
 use structopt::StructOpt;
 
@@ -5,6 +6,8 @@ use structopt::StructOpt;
 pub enum Command {
   #[structopt(name = "shapefile")]
   Shapefile(Shapefile),
+  #[structopt(name = "export")]
+  Export(Export),
 }
 
 impl Command {
@@ -12,7 +15,8 @@ impl Command {
     std::env::set_var("PATH", Command::get_path_env());
 
     match self {
-      Command::Shapefile(shapefile) => shapefile.exec(),
+      Command::Shapefile(executable) => executable.exec(),
+      Command::Export(executable) => executable.exec(),
     }
   }
 
@@ -58,8 +62,8 @@ impl Command {
   pub fn get_path_env() -> String {
     let home = std::env::var("HOME").expect("No $HOME found in environment variables");
     match std::env::var("PATH") {
-      Ok(val) => format!("{}/.wof:{}", home, val),
-      Err(_) => format!("{}/.wof:{}/bin:/bin", home, home),
+      Ok(val) => format!("{}/.wof/bin:{}", home, val),
+      Err(_) => format!("{}/.wof/bin:{}/bin:/bin", home, home),
     }
   }
 }

@@ -69,11 +69,11 @@ impl Shapefile {
     let mut child = std::process::Command::new("sh")
     .arg("-c")
     .arg("
-mkdir -p /tmp/go-whosonfirst-shapefile ~/.wof \
+mkdir -p /tmp/go-whosonfirst-shapefile ~/.wof/bin/ \
 && cd /tmp/go-whosonfirst-shapefile \
 && curl -sSL https://github.com/whosonfirst/go-whosonfirst-shapefile/archive/3861ef8.tar.gz | tar zx --strip-components=1 \
 && make bin \
-&& mv bin/wof-shapefile ~/.wof \
+&& mv bin/wof-shapefile ~/.wof/bin/ \
 ")
   .stdin(std::process::Stdio::inherit())
   .stdout(std::process::Stdio::inherit())
