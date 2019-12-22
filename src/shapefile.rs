@@ -73,7 +73,7 @@ mkdir -p /tmp/go-whosonfirst-shapefile ~/.wof/bin/ \
 && cd /tmp/go-whosonfirst-shapefile \
 && curl -sSL https://github.com/whosonfirst/go-whosonfirst-shapefile/archive/3861ef8.tar.gz | tar zx --strip-components=1 \
 && make bin \
-&& mv bin/wof-shapefile ~/.wof/bin/ \
+&& mv bin/wof-shapefile-index ~/.wof/bin/ \
 ")
   .stdin(std::process::Stdio::inherit())
   .stdout(std::process::Stdio::inherit())

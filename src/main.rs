@@ -4,6 +4,7 @@ use structopt::StructOpt;
 
 mod command;
 mod export;
+mod install;
 mod shapefile;
 
 #[derive(Debug, StructOpt)]

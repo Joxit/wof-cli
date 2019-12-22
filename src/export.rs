@@ -3,7 +3,7 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 pub struct Export {
-    /// Where to write the export, on stdout or flatfile (needs source)
+  /// Where to write the export, on stdout or flatfile (needs source)
   #[structopt(short = "e", long = "exporter", possible_values = &["flatfile", "stdout"])]
   pub exporter: Option<String>,
   /// WOF data folder where are stored GeoJSONs to exportify
