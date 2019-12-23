@@ -6,6 +6,7 @@ mod command;
 mod export;
 mod install;
 mod shapefile;
+mod std;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "wof")]
@@ -16,5 +17,6 @@ pub struct ApplicationArguments {
 
 fn main() {
   let opt = ApplicationArguments::from_args();
+
   opt.command.exec();
 }

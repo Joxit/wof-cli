@@ -14,7 +14,10 @@ impl Install {
     match self.package.as_ref() {
       "export" => Export::install(),
       "shapefile" => Shapefile::install(),
-      _ => panic!("Incorrect package to install."),
+      _ => {
+        eprintln!("Incorrect package to install.");
+        std::process::exit(1)
+      }
     }
   }
 }

@@ -1,6 +1,7 @@
 use crate::export::Export;
 use crate::install::Install;
 use crate::shapefile::Shapefile;
+use crate::std::ResultExit;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -71,5 +72,16 @@ impl Command {
       Ok(val) => format!("{}/.wof/bin:{}", home, val),
       Err(_) => format!("{}/.wof/bin:{}/bin:/bin", home, home),
     }
+  }
+
+  pub fn assert_cmd_exists(binary: &'static str, install: &'static str) {
+    which::which(binary).expect_exit_code(
+      format!(
+        "The command `{}` not found, please run `{}` first.",
+        binary, install
+      )
+      .as_ref(),
+      127,
+    );
   }
 }

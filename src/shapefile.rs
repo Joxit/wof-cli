@@ -1,5 +1,8 @@
 use crate::command::Command;
+use crate::std::ResultExit;
 use structopt::StructOpt;
+
+static BINARY: &'static str = "wof-shapefile-index";
 
 #[derive(Debug, StructOpt)]
 pub struct Shapefile {
@@ -39,6 +42,8 @@ impl Shapefile {
   pub fn exec(&self) {
     let mut args: Vec<String> = Vec::new();
 
+    Command::assert_cmd_exists(BINARY, "wof install shapefile");
+
     Command::push_optional_args(&mut args, "-belongs-to", &self.belongs_to);
     Command::push_optional_args(&mut args, "-exclude-placetype", &self.exclude);
     Command::push_optional_args(&mut args, "-include-placetype", &self.include);
@@ -50,13 +55,13 @@ impl Shapefile {
     }
     args.push(self.directory.to_string());
 
-    let mut child = std::process::Command::new("wof-shapefile-index")
+    let mut child = std::process::Command::new(BINARY)
       .stdin(std::process::Stdio::inherit())
       .stdout(std::process::Stdio::inherit())
       .stderr(std::process::Stdio::inherit())
       .args(args)
       .spawn()
-      .expect("Something goes wrong in the `wof-shapefile-index` command line");
+      .expect_exit("Something goes wrong in the `wof-shapefile-index` command line");
 
     if let Ok(status) = child.wait() {
       std::process::exit(status.code().unwrap_or(127));
@@ -79,7 +84,7 @@ mkdir -p /tmp/go-whosonfirst-shapefile ~/.wof/bin/ \
   .stdout(std::process::Stdio::inherit())
   .stderr(std::process::Stdio::inherit())
   .spawn()
-  .expect("Something goes wrong in the install command line");
+  .expect_exit(format!("Something goes wrong with the `{}` command line", BINARY).as_ref());
 
     if let Ok(status) = child.wait() {
       std::process::exit(status.code().unwrap_or(127));

@@ -1,5 +1,8 @@
 use crate::command::Command;
+use crate::std::ResultExit;
 use structopt::StructOpt;
+
+static BINARY: &'static str = "wof-exportify";
 
 #[derive(Debug, StructOpt)]
 pub struct Export {
@@ -36,6 +39,8 @@ impl Export {
   pub fn exec(&self) {
     let mut args: Vec<String> = Vec::new();
 
+    Command::assert_cmd_exists(BINARY, "wof install export");
+
     Command::push_optional_arg(&mut args, "--exporter", &self.exporter);
     Command::push_optional_arg(&mut args, "--source", &self.source);
     Command::push_optional_arg(&mut args, "--id", &self.id);
@@ -55,13 +60,13 @@ impl Export {
       args.push("--verbose".to_string());
     }
 
-    let mut child = std::process::Command::new("wof-exportify")
+    let mut child = std::process::Command::new(BINARY)
       .stdin(std::process::Stdio::inherit())
       .stdout(std::process::Stdio::inherit())
       .stderr(std::process::Stdio::inherit())
       .args(args)
       .spawn()
-      .expect("Something goes wrong in the `wof-exportify` command line");
+      .expect_exit(format!("Something goes wrong with the `{}` command line", BINARY).as_ref());
 
     if let Ok(status) = child.wait() {
       std::process::exit(status.code().unwrap_or(127));
@@ -83,7 +88,7 @@ mkdir -p /tmp/whosonfirst-export ~/.wof \
   .stdout(std::process::Stdio::inherit())
   .stderr(std::process::Stdio::inherit())
   .spawn()
-  .expect("Something goes wrong in the install command line");
+  .expect_exit("Something goes wrong in the install command line");
 
     if let Ok(status) = child.wait() {
       std::process::exit(status.code().unwrap_or(127));
