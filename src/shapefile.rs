@@ -64,7 +64,7 @@ impl Shapefile {
       .expect_exit("Something goes wrong in the `wof-shapefile-index` command line");
 
     if let Ok(status) = child.wait() {
-      std::process::exit(status.code().unwrap_or(127));
+      std::process::exit(status.code().unwrap_or(1));
     } else {
       println!("shapefile cmd didn't start correctly");
     }
@@ -87,7 +87,7 @@ mkdir -p /tmp/go-whosonfirst-shapefile ~/.wof/bin/ \
   .expect_exit(format!("Something goes wrong with the `{}` command line", BINARY).as_ref());
 
     if let Ok(status) = child.wait() {
-      std::process::exit(status.code().unwrap_or(127));
+      std::process::exit(status.code().unwrap_or(1));
     }
   }
 }

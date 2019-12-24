@@ -91,7 +91,7 @@ mkdir -p /tmp/whosonfirst-export ~/.wof \
   .expect_exit("Something goes wrong in the install command line");
 
     if let Ok(status) = child.wait() {
-      std::process::exit(status.code().unwrap_or(127));
+      std::process::exit(status.code().unwrap_or(1));
     }
   }
 }

@@ -16,7 +16,7 @@ impl Install {
       "shapefile" => Shapefile::install(),
       _ => {
         eprintln!("Incorrect package to install.");
-        std::process::exit(1)
+        std::process::exit(127)
       }
     }
   }
