@@ -1,5 +1,7 @@
 use crate::command::Command;
+use crate::git::Git;
 use crate::std::ResultExit;
+use std::default::Default;
 use structopt::StructOpt;
 
 static BINARY: &'static str = "wof-exportify";
@@ -27,19 +29,49 @@ pub struct Export {
   /// Read stdin for the object to export
   #[structopt(long = "stdin")]
   pub stdin: bool,
+  /// Run export on all files of a specific commit/ref
+  #[structopt(long = "commit")]
+  pub commit: Option<String>,
   /// Activate debug mode
   #[structopt(long = "debug")]
   pub debug: bool,
   /// Activate verbose mode
   #[structopt(short = "v", long = "verbose")]
   pub verbose: bool,
+  #[structopt(skip)]
+  pub exit: bool,
 }
 
 impl Export {
   pub fn exec(&self) {
-    let mut args: Vec<String> = Vec::new();
-
     Command::assert_cmd_exists(BINARY, "wof install export");
+
+    if let Some(commit) = &self.commit {
+      let git = Git::new();
+      let data_dir = git.data_dir();
+      let paths = git.get_changes_from_commit(&commit);
+      for path in paths {
+        if path.exists() && path.extension() == Some(std::ffi::OsStr::new("geojson")) {
+          println!("Exporting: {:?}", path);
+          Export {
+            path: Some(String::from(path.to_str().expect("Can't convert the path"))),
+            exporter: Some(String::from("flatfile")),
+            source: Some(data_dir.clone()),
+            exit: false,
+            ..Default::default()
+          }
+          .exec();
+        } else {
+          println!("Skipping: {:?}", path);
+        }
+      }
+    } else {
+      self._exec();
+    }
+  }
+
+  fn _exec(&self) {
+    let mut args: Vec<String> = Vec::new();
 
     Command::push_optional_arg(&mut args, "--exporter", &self.exporter);
     Command::push_optional_arg(&mut args, "--source", &self.source);
@@ -69,7 +101,9 @@ impl Export {
       .expect_exit(format!("Something goes wrong with the `{}` command line", BINARY).as_ref());
 
     if let Ok(status) = child.wait() {
-      std::process::exit(status.code().unwrap_or(127));
+      if (self.exit) {
+        std::process::exit(status.code().unwrap_or(127));
+      }
     } else {
       println!("export cmd didn't start correctly");
     }
@@ -92,6 +126,25 @@ mkdir -p /tmp/whosonfirst-export ~/.wof \
 
     if let Ok(status) = child.wait() {
       std::process::exit(status.code().unwrap_or(1));
+    }
+  }
+}
+
+impl Default for Export {
+  fn default() -> Self {
+    Export {
+      path: None,
+      exporter: None,
+      collection: false,
+      alt: None,
+      verbose: false,
+      debug: false,
+      commit: None,
+      display: None,
+      id: None,
+      stdin: false,
+      source: None,
+      exit: true,
     }
   }
 }

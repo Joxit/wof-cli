@@ -1,6 +1,7 @@
 use crate::std::ResultExit;
 use git2::{DiffFormat, ObjectType, Repository};
 use std::path::PathBuf;
+use std::vec::Vec;
 use structopt::StructOpt;
 
 pub struct Git {
@@ -18,12 +19,22 @@ impl Git {
     };
   }
 
+  pub fn data_dir(&self) -> String {
+    String::from(
+      self
+        .workdir
+        .join("data")
+        .to_str()
+        .expect("Can't convert the workdir to str."),
+    )
+  }
+
   pub fn repository(&self) -> Repository {
     Repository::discover(self.workdir.as_path())
       .expect("This is not a git repository. Should not happen.")
   }
 
-  pub fn exec(&self, commit: String) {
+  pub fn get_changes_from_commit(&self, commit: &String) -> Vec<PathBuf> {
     let repo = self.repository();
     let obj_dst = repo
       .revparse_single(commit.as_str())
@@ -38,19 +49,20 @@ impl Git {
     let tree_dst = obj_dst
       .peel(ObjectType::Tree)
       .expect("Can't get the destination tree.");
-
+    let mut paths: Vec<PathBuf> = Vec::new();
     repo
       .diff_tree_to_tree(Some(&tree_src), tree_dst.as_tree(), None)
       .expect("Can't create the diff between source and destination")
       .print(DiffFormat::NameOnly, |_delta, _hunk, line| {
-        let path = self
-          .workdir
-          .as_path()
-          .clone()
-          .join(std::str::from_utf8(line.content()).expect("WOF Elements should be utf-8."));
-        println!("{:?}", path);
+        let path = self.workdir.as_path().clone().join(
+          std::str::from_utf8(line.content())
+            .expect("WOF Elements should be utf-8.")
+            .trim(),
+        );
+        paths.push(path);
         true
       })
       .expect_exit("Can't create the diff for this commit");
+    paths
   }
 }
