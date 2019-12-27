@@ -29,9 +29,12 @@ pub struct Export {
   /// Read stdin for the object to export
   #[structopt(long = "stdin")]
   pub stdin: bool,
-  /// Run export on all files of a specific commit/ref
+  /// Run export on all files of a specific commit/ref (needs git repository)
   #[structopt(long = "commit")]
   pub commit: Option<String>,
+  /// Run export on all stagged files (needs git repository)
+  #[structopt(long = "stagged")]
+  pub stagged: bool,
   /// Activate debug mode
   #[structopt(long = "debug")]
   pub debug: bool,
@@ -46,10 +49,16 @@ impl Export {
   pub fn exec(&self) {
     Command::assert_cmd_exists(BINARY, "wof install export");
 
-    if let Some(commit) = &self.commit {
+    if self.commit != None && self.stagged == true {
+      println!("The flag stagged has been ignored. Can't be use with commit");
+    } else if self.commit != None || self.stagged == true {
       let git = Git::new();
       let data_dir = git.data_dir();
-      let paths = git.get_changes_from_commit(&commit);
+      let paths = if let Some(commit) = &self.commit {
+        git.get_changes_from_commit(&commit)
+      } else {
+        git.get_changes_from_stagged()
+      };
       for path in paths {
         if path.exists() && path.extension() == Some(std::ffi::OsStr::new("geojson")) {
           println!("Exporting: {:?}", path);
@@ -101,7 +110,7 @@ impl Export {
       .expect_exit(format!("Something goes wrong with the `{}` command line", BINARY).as_ref());
 
     if let Ok(status) = child.wait() {
-      if (self.exit) {
+      if self.exit {
         std::process::exit(status.code().unwrap_or(127));
       }
     } else {
@@ -140,6 +149,7 @@ impl Default for Export {
       verbose: false,
       debug: false,
       commit: None,
+      stagged: false,
       display: None,
       id: None,
       stdin: false,

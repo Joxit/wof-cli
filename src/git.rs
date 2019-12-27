@@ -1,8 +1,7 @@
 use crate::std::ResultExit;
-use git2::{DiffFormat, ObjectType, Repository};
+use git2::{DiffFormat, DiffLine, ObjectType, Repository};
 use std::path::PathBuf;
 use std::vec::Vec;
-use structopt::StructOpt;
 
 pub struct Git {
   workdir: PathBuf,
@@ -54,15 +53,38 @@ impl Git {
       .diff_tree_to_tree(Some(&tree_src), tree_dst.as_tree(), None)
       .expect("Can't create the diff between source and destination")
       .print(DiffFormat::NameOnly, |_delta, _hunk, line| {
-        let path = self.workdir.as_path().clone().join(
-          std::str::from_utf8(line.content())
-            .expect("WOF Elements should be utf-8.")
-            .trim(),
-        );
-        paths.push(path);
+        paths.push(self.diff_line_to_real_path(line));
         true
       })
       .expect_exit("Can't create the diff for this commit");
     paths
+  }
+
+  pub fn get_changes_from_stagged(&self) -> Vec<PathBuf> {
+    let mut paths: Vec<PathBuf> = Vec::new();
+    let repo = self.repository();
+    let tree = repo
+      .revparse_single("HEAD")
+      .expect_exit("HEAD not found in your git tree")
+      .peel(ObjectType::Tree)
+      .expect("Can't get the HEAD tree.");
+
+    repo
+      .diff_tree_to_index(tree.as_tree(), None, None)
+      .expect("Can't create the diff for stagged elements")
+      .print(DiffFormat::NameOnly, |_delta, _hunk, line| {
+        paths.push(self.diff_line_to_real_path(line));
+        true
+      })
+      .expect_exit("Can't create the stagged diff");
+    paths
+  }
+
+  fn diff_line_to_real_path(&self, line: DiffLine) -> PathBuf {
+    self.workdir.as_path().clone().join(
+      std::str::from_utf8(line.content())
+        .expect("WOF Elements should be utf-8.")
+        .trim(),
+    )
   }
 }
