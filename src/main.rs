@@ -3,6 +3,7 @@ use crate::command::Command;
 use structopt::StructOpt;
 
 mod command;
+mod completion;
 mod export;
 mod git;
 mod install;

@@ -1,3 +1,4 @@
+use crate::completion::Completion;
 use crate::export::Export;
 use crate::install::Install;
 use crate::shapefile::Shapefile;
@@ -6,12 +7,18 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 pub enum Command {
-  #[structopt(name = "shapefile", about = "Who's On First documents to ESRI shapefiles.")]
+  /// Who's On First documents to ESRI shapefiles.
+  #[structopt(name = "shapefile")]
   Shapefile(Shapefile),
-  #[structopt(name = "export", about = "Export tools for the Who's On First documents.")]
+  /// Export tools for the Who's On First documents.
+  #[structopt(name = "export")]
   Export(Export),
-  #[structopt(name = "install", about = "Install what you need to use this CLI (needs python2 and go).")]
+  /// Install what you need to use this CLI (needs python2 and go).
+  #[structopt(name = "install")]
   Install(Install),
+  /// Generate autocompletion file for your shell.
+  #[structopt(name = "completion")]
+  Completion(Completion),
 }
 
 impl Command {
@@ -25,6 +32,7 @@ impl Command {
       Command::Shapefile(executable) => executable.exec(),
       Command::Export(executable) => executable.exec(),
       Command::Install(executable) => executable.exec(),
+      Command::Completion(executable) => executable.exec(),
     }
   }
 
