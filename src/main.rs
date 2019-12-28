@@ -10,7 +10,7 @@ mod shapefile;
 mod std;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "wof")]
+#[structopt(name = "wof", author, about)]
 pub struct ApplicationArguments {
   #[structopt(subcommand)]
   pub command: Command,

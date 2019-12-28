@@ -2,6 +2,7 @@
 name = "wof-cli"
 version = "0.1.0"
 authors = ["Jones Magloire @Joxit"]
+description = "The Who's On First command line aggregator."
 edition = "2018"
 license = "MIT"
 license-file = "LICENSE"

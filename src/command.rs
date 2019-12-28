@@ -6,11 +6,11 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 pub enum Command {
-  #[structopt(name = "shapefile")]
+  #[structopt(name = "shapefile", about = "Who's On First documents to ESRI shapefiles.")]
   Shapefile(Shapefile),
-  #[structopt(name = "export")]
+  #[structopt(name = "export", about = "Export tools for the Who's On First documents.")]
   Export(Export),
-  #[structopt(name = "install")]
+  #[structopt(name = "install", about = "Install what you need to use this CLI (needs python2 and go).")]
   Install(Install),
 }
 
