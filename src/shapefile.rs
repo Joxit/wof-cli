@@ -31,7 +31,7 @@ pub struct Shapefile {
       long = "shapetype",
       possible_values = &["MULTIPOINT", "POINT", "POLYGON", "POLYLINE"],
       case_insensitive = false,
-      default_value = "POINT")]
+      default_value = "POLYGON")]
   pub shapetype: String,
   /// Display timings during and after indexing
   #[structopt(long = "timings")]
