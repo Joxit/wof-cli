@@ -2,6 +2,7 @@ use crate::completion::Completion;
 use crate::export::Export;
 use crate::install::Install;
 use crate::shapefile::Shapefile;
+use crate::sqlite::SQLite;
 use crate::std::ResultExit;
 use structopt::StructOpt;
 
@@ -10,6 +11,9 @@ pub enum Command {
   /// Who's On First documents to ESRI shapefiles.
   #[structopt(name = "shapefile")]
   Shapefile(Shapefile),
+  /// Who's On First documents to SQLite database.
+  #[structopt(name = "sqlite")]
+  SQLite(SQLite),
   /// Export tools for the Who's On First documents.
   #[structopt(name = "export")]
   Export(Export),
@@ -33,6 +37,7 @@ impl Command {
       Command::Export(executable) => executable.exec(),
       Command::Install(executable) => executable.exec(),
       Command::Completion(executable) => executable.exec(),
+      Command::SQLite(executable) => executable.exec(),
     }
   }
 

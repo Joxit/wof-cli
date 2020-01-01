@@ -8,6 +8,7 @@ mod export;
 mod git;
 mod install;
 mod shapefile;
+mod sqlite;
 mod std;
 
 #[derive(Debug, StructOpt)]
