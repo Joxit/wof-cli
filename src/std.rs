@@ -22,3 +22,21 @@ impl<T, E: std::fmt::Debug> ResultExit<T> for Result<T, E> {
     self.expect_exit_code(msg, 1)
   }
 }
+
+impl<T> ResultExit<T> for Option<T> {
+  #[inline]
+  fn expect_exit_code(self, msg: &str, code: i32) -> T {
+    match self {
+      Some(t) => t,
+      None => {
+        eprintln!("{}", msg);
+        std::process::exit(code);
+      }
+    }
+  }
+
+  #[inline]
+  fn expect_exit(self, msg: &str) -> T {
+    self.expect_exit_code(msg, 1)
+  }
+}
