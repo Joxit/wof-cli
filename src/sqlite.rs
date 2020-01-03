@@ -34,9 +34,21 @@ impl SQLite {
   pub fn exec(&self) {
     let mut args: Vec<String> = vec!["-build-sqlite".to_string(), "-local-checkout".to_string()];
     let mut to_remove: Vec<PathBuf> = Vec::new();
+    let out_path = Path::new(&self.out).to_path_buf();
 
-    let out_path =
-      std::fs::canonicalize(Path::new(&self.out)).expect_exit("Can't get the output directory");
+    if !out_path.exists() {
+      if let Err(e) = std::fs::create_dir_all(&out_path) {
+        eprintln!("Can't create directory `{}`: {:?}", &self.out, e);
+        std::process::exit(1);
+      }
+    } else if !out_path.is_dir() {
+      eprintln!("`{}` is not a directory.", &self.out);
+      std::process::exit(1);
+    }
+
+    let out_path = out_path
+      .canonicalize()
+      .expect_exit("Can't get the output directory");
     Command::push_arg(&mut args, "-workdir", &self.out);
     Command::push_optional_arg(&mut args, "-custom-repo", &self.custom_repo);
 
