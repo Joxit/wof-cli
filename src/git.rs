@@ -11,7 +11,7 @@ impl Git {
   pub fn new() -> Git {
     return Git {
       workdir: Repository::discover(".")
-        .expect_exit("This is not a git repository. Make sure to be in a git folder.")
+        .expect_exit("This is not a git repository. Make sure to be in a git folder")
         .workdir()
         .expect("Git working directory not found. Should not happen.")
         .to_path_buf(),

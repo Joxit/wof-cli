@@ -5,6 +5,7 @@ use structopt::StructOpt;
 mod command;
 mod completion;
 mod export;
+mod fetch;
 mod git;
 mod install;
 mod shapefile;

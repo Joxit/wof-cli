@@ -1,5 +1,6 @@
 use crate::completion::Completion;
 use crate::export::Export;
+use crate::fetch::Fetch;
 use crate::install::Install;
 use crate::shapefile::Shapefile;
 use crate::sqlite::SQLite;
@@ -23,6 +24,9 @@ pub enum Command {
   /// Generate autocompletion file for your shell.
   #[structopt(name = "completion")]
   Completion(Completion),
+  /// Fetch WOF data from github.
+  #[structopt(name = "fetch")]
+  Fetch(Fetch),
 }
 
 impl Command {
@@ -38,6 +42,7 @@ impl Command {
       Command::Install(executable) => executable.exec(),
       Command::Completion(executable) => executable.exec(),
       Command::SQLite(executable) => executable.exec(),
+      Command::Fetch(executable) => executable.exec(),
     }
   }
 
@@ -90,7 +95,7 @@ impl Command {
   pub fn assert_cmd_exists(binary: &'static str, install: &'static str) {
     which::which(binary).expect_exit_code(
       format!(
-        "The command `{}` not found, please run `{}` first.",
+        "The command `{}` not found, please run `{}` first",
         binary, install
       )
       .as_ref(),

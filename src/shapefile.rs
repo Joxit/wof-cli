@@ -61,7 +61,7 @@ impl Shapefile {
       .stderr(std::process::Stdio::inherit())
       .args(args)
       .spawn()
-      .expect_exit("Something goes wrong in the `wof-shapefile-index` command line");
+      .expect_exit(format!("Something goes wrong with the `{}` command line", BINARY).as_ref());
 
     if let Ok(status) = child.wait() {
       std::process::exit(status.code().unwrap_or(1));
