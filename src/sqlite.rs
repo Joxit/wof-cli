@@ -1,4 +1,5 @@
 use crate::command::Command;
+use crate::std::assert_directory_exists;
 use crate::std::ResultExit;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
@@ -36,15 +37,7 @@ impl SQLite {
     let mut to_remove: Vec<PathBuf> = Vec::new();
     let out_path = Path::new(&self.out).to_path_buf();
 
-    if !out_path.exists() {
-      if let Err(e) = std::fs::create_dir_all(&out_path) {
-        eprintln!("Can't create directory `{}`: {:?}", &self.out, e);
-        std::process::exit(1);
-      }
-    } else if !out_path.is_dir() {
-      eprintln!("`{}` is not a directory.", &self.out);
-      std::process::exit(1);
-    }
+    assert_directory_exists(&out_path);
 
     let out_path = out_path
       .canonicalize()
