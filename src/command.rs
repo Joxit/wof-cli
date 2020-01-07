@@ -2,6 +2,7 @@ use crate::completion::Completion;
 use crate::export::Export;
 use crate::fetch::Fetch;
 use crate::install::Install;
+use crate::print::Print;
 use crate::shapefile::Shapefile;
 use crate::sqlite::SQLite;
 use crate::std::ResultExit;
@@ -27,6 +28,9 @@ pub enum Command {
   /// Fetch WOF data from github.
   #[structopt(name = "fetch")]
   Fetch(Fetch),
+  /// Print to stdout WOF document by id.
+  #[structopt(name = "print")]
+  Print(Print),
 }
 
 impl Command {
@@ -43,6 +47,7 @@ impl Command {
       Command::Completion(executable) => executable.exec(),
       Command::SQLite(executable) => executable.exec(),
       Command::Fetch(executable) => executable.exec(),
+      Command::Print(executable) => executable.exec(),
     }
   }
 

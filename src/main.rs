@@ -8,6 +8,7 @@ mod export;
 mod fetch;
 mod git;
 mod install;
+mod print;
 mod shapefile;
 mod sqlite;
 mod std;
