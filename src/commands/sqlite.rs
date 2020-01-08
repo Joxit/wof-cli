@@ -1,4 +1,4 @@
-use crate::command::Command;
+use crate::commands::Command;
 use crate::std::assert_directory_exists;
 use crate::std::ResultExit;
 use std::path::{Path, PathBuf};

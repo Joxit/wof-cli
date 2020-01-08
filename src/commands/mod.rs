@@ -1,12 +1,20 @@
-use crate::completion::Completion;
-use crate::export::Export;
-use crate::fetch::Fetch;
-use crate::install::Install;
-use crate::print::Print;
-use crate::shapefile::Shapefile;
-use crate::sqlite::SQLite;
+use crate::commands::completion::Completion;
+use crate::commands::export::Export;
+use crate::commands::fetch::Fetch;
+use crate::commands::install::Install;
+use crate::commands::print::Print;
+use crate::commands::shapefile::Shapefile;
+use crate::commands::sqlite::SQLite;
 use crate::std::ResultExit;
 use structopt::StructOpt;
+
+mod completion;
+mod export;
+mod fetch;
+mod install;
+mod print;
+mod shapefile;
+mod sqlite;
 
 #[derive(Debug, StructOpt)]
 pub enum Command {

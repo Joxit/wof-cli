@@ -1,16 +1,9 @@
 //! How to extract subcommands' args into external structs.
-use crate::command::Command;
+use crate::commands::Command;
 use structopt::StructOpt;
 
-mod command;
-mod completion;
-mod export;
-mod fetch;
+mod commands;
 mod git;
-mod install;
-mod print;
-mod shapefile;
-mod sqlite;
 mod std;
 
 #[derive(Debug, StructOpt)]

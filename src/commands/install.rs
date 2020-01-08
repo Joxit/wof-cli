@@ -1,6 +1,6 @@
-use crate::export::Export;
-use crate::shapefile::Shapefile;
-use crate::sqlite::SQLite;
+use crate::commands::export::Export;
+use crate::commands::shapefile::Shapefile;
+use crate::commands::sqlite::SQLite;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]

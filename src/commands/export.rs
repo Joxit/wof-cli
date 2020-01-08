@@ -1,4 +1,4 @@
-use crate::command::Command;
+use crate::commands::Command;
 use crate::git::Git;
 use crate::std::ResultExit;
 use std::default::Default;
