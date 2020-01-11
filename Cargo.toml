@@ -1,5 +1,5 @@
 [package]
-name = "wof-cli"
+name = "wof"
 version = "0.1.0"
 authors = ["Jones Magloire @Joxit"]
 description = "The Who's On First command line aggregator."
@@ -14,7 +14,7 @@ path = "src/main.rs"
 [dependencies]
 structopt = "0.3"
 which = "3.1.0"
-serde_json = "1.0"
+json = { git = "https://github.com/Joxit/json-rust.git", branch = "feat/custom-generator" }
 tar = "0.4.26"
 flate2 = "1.0.13"
 attohttpc = "0.8.0"

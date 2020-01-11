@@ -4,6 +4,7 @@ use structopt::StructOpt;
 
 mod commands;
 mod git;
+mod ser;
 mod std;
 
 #[derive(Debug, StructOpt)]
