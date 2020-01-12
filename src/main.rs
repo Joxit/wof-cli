@@ -4,8 +4,9 @@ use structopt::StructOpt;
 
 mod commands;
 mod git;
-mod ser;
+pub mod ser;
 mod std;
+pub mod utils;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "wof", author, about)]
