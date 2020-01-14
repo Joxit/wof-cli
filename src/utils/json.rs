@@ -3,6 +3,7 @@ pub use json::JsonValue;
 
 pub trait JsonUtils {
   fn as_json_value(&self) -> &JsonValue;
+  fn as_mut_json_value(&mut self) -> &mut JsonValue;
   fn assert_is_object(&self) -> Result<(), String> {
     match &self.as_json_value() {
       JsonValue::Object(_) => Ok(()),
@@ -46,6 +47,24 @@ pub trait JsonUtils {
       _ => None,
     }
   }
+  fn as_mut_object(&mut self) -> Option<&mut Object> {
+    match self.as_mut_json_value() {
+      JsonValue::Object(ref mut obj) => Some(obj),
+      _ => None,
+    }
+  }
+  fn keys(&self) -> Vec<String> {
+    match &self.as_json_value() {
+      JsonValue::Object(ref obj) => {
+        let mut keys = Vec::new();
+        for (k, _) in obj.iter() {
+          keys.push(k.to_string());
+        }
+        keys
+      }
+      _ => Vec::new(),
+    }
+  }
   fn as_array(&self) -> Option<&Vec<JsonValue>> {
     match &self.as_json_value() {
       JsonValue::Array(ref array) => Some(array),
@@ -68,5 +87,8 @@ pub trait JsonUtils {
 impl JsonUtils for JsonValue {
   fn as_json_value(&self) -> &JsonValue {
     &self
+  }
+  fn as_mut_json_value(&mut self) -> &mut JsonValue {
+    self
   }
 }
