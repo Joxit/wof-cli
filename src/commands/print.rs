@@ -1,7 +1,7 @@
-use crate::ser::{Generator, WOFGenerator};
+use crate::ser::{DefaultGenerator, Generator, WOFGenerator};
 use crate::std::ResultExit;
 use crate::utils::{self, JsonUtils};
-use json::{self};
+use json;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::string::String;
@@ -15,12 +15,18 @@ pub struct Print {
   /// Remove the geometry before pretty print.
   #[structopt(long = "no-geom")]
   pub no_geom: bool,
+  /// Remove the geometry before pretty print.
+  #[structopt(long = "no-pretty")]
+  pub no_pretty: bool,
   /// Send the raw data, do not pretty print it. You can't use filters with this.
   #[structopt(short = "r", long = "raw")]
   pub raw: bool,
   /// Exclude some properties from the input. `wof:` will exclude all properties starting with `wof:`
   #[structopt(short = "e", long = "exclude")]
   pub excludes: Vec<String>,
+  /// Include some properties from the input. `wof:` will include only properties starting with `wof:`
+  #[structopt(short = "i", long = "include")]
+  pub includes: Vec<String>,
 }
 
 impl Print {
@@ -44,17 +50,31 @@ impl Print {
             obj.remove("geometry");
           }
           if let Some(props) = obj.get_mut("properties") {
-            for key in props.keys() {
+            let keys = props.keys();
+            for key in &keys {
               for exclude in &self.excludes {
                 if key.starts_with(exclude.as_str()) {
                   props.remove(key.as_str());
                 }
               }
             }
+            for key in &keys {
+              for include in &self.includes {
+                if !key.starts_with(include.as_str()) {
+                  props.remove(key.as_str());
+                }
+              }
+            }
           };
-          WOFGenerator::new(&mut std::io::stdout())
-            .write_json(&json)
-            .expect_exit(message_error.as_str());
+          if !self.no_pretty {
+            WOFGenerator::new(&mut std::io::stdout())
+              .write_json(&json)
+              .expect_exit(message_error.as_str());
+          } else {
+            DefaultGenerator::new(&mut std::io::stdout())
+              .write_json(&json)
+              .expect_exit(message_error.as_str());
+          }
         }
       } else {
         eprintln!("Skipping {}, does not exists", id);

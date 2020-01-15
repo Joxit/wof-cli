@@ -1,4 +1,4 @@
-pub use json::codegen::Generator;
+pub use json::codegen::{Generator, WriterGenerator as DefaultGenerator};
 use json::object::Object;
 use json::JsonValue;
 use std::io::{self, Write};
