@@ -5,8 +5,12 @@ use crate::commands::install::Install;
 use crate::commands::print::Print;
 use crate::commands::shapefile::Shapefile;
 use crate::commands::sqlite::SQLite;
-use crate::std::ResultExit;
+use crate::std::{ResultExit, StringifyError};
+use flate2::read::GzDecoder;
+use std::path::PathBuf;
+use std::result::Result;
 use structopt::StructOpt;
+use tar::Archive;
 
 mod completion;
 mod export;
@@ -115,4 +119,62 @@ impl Command {
       127,
     );
   }
+}
+
+pub fn assert_directory_exists(path: &PathBuf) {
+  if !path.exists() {
+    if let Err(e) = std::fs::create_dir_all(&path) {
+      eprintln!(
+        "Can't create directory `{}`: {}",
+        path.to_str().unwrap_or("---Non UTF-8 Path---"),
+        e
+      );
+      std::process::exit(1);
+    }
+  } else if !path.is_dir() {
+    eprintln!(
+      "`{}` is not a directory.",
+      path.to_str().unwrap_or("---Non UTF-8 Path---")
+    );
+    std::process::exit(1);
+  }
+}
+
+pub fn download_tar_gz_strip(
+  url: String,
+  dest: PathBuf,
+  strip_components: u32,
+) -> Result<(), String> {
+  assert_directory_exists(&dest);
+
+  let (_, _, read) = attohttpc::get(url)
+    .send()
+    .stringify_err("Download error")?
+    .split();
+  let decode = GzDecoder::new(read);
+
+  if strip_components == 0 {
+    Archive::new(decode)
+      .unpack(dest)
+      .stringify_err("Extraction error")?;
+  } else {
+    for entry in Archive::new(decode)
+      .entries()
+      .stringify_err("Extraction list error")?
+    {
+      let mut entry = entry.stringify_err("Extraction (entry) error")?;
+      let entry_path = entry
+        .path()
+        .stringify_err("Extraction (entry path) error")?;
+      let mut components = entry_path.components();
+
+      for _ in 0..strip_components {
+        components.next();
+      }
+
+      let path = dest.join(components.as_path());
+      entry.unpack(&path).stringify_err("Extraction error")?;
+    }
+  }
+  Ok(())
 }

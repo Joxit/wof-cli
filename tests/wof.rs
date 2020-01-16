@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate json;
-use wof::{JsonObject, JsonValue, WOFGeoJSON};
+use wof::WOFGeoJSON;
 
 #[test]
 fn as_valid_wof_geojson() {
