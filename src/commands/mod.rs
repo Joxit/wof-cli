@@ -147,10 +147,20 @@ pub fn download_tar_gz_strip(
 ) -> Result<(), String> {
   assert_directory_exists(&dest);
 
-  let (_, _, read) = attohttpc::get(url)
+  let (status, _, read) = attohttpc::get(url)
     .send()
     .stringify_err("Download error")?
     .split();
+
+  if !status.is_success() {
+    let reason = if let Some(reason) = status.canonical_reason() {
+      reason
+    } else {
+      "Download is not a success"
+    };
+    return Err(reason.to_string());
+  }
+
   let decode = GzDecoder::new(read);
 
   if strip_components == 0 {
