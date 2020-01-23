@@ -2,6 +2,7 @@ use crate::commands::completion::Completion;
 use crate::commands::export::Export;
 use crate::commands::fetch::Fetch;
 use crate::commands::install::Install;
+use crate::commands::list::List;
 use crate::commands::print::Print;
 use crate::commands::shapefile::Shapefile;
 use crate::commands::sqlite::SQLite;
@@ -16,6 +17,7 @@ mod completion;
 mod export;
 mod fetch;
 mod install;
+mod list;
 mod print;
 mod shapefile;
 mod sqlite;
@@ -43,6 +45,9 @@ pub enum Command {
   /// Print to stdout WOF document by id.
   #[structopt(name = "print")]
   Print(Print),
+  /// List all WOF document in the directory.
+  #[structopt(name = "list")]
+  List(List),
 }
 
 impl Command {
@@ -60,6 +65,7 @@ impl Command {
       Command::SQLite(executable) => executable.exec(),
       Command::Fetch(executable) => executable.exec(),
       Command::Print(executable) => executable.exec(),
+      Command::List(executable) => executable.exec(),
     }
   }
 
