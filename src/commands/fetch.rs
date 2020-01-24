@@ -1,5 +1,4 @@
 use crate::commands::download_tar_gz_strip;
-use crate::std::ResultExit;
 use crate::utils;
 use std::path::Path;
 use structopt::StructOpt;

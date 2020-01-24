@@ -2,9 +2,11 @@ use crate::ser::{Generator, WOFGenerator};
 use crate::std::StringifyError;
 use crate::utils::JsonUtils;
 pub use json::object::Object;
-pub use json::JsonValue;
-use std::io::Write;
+pub use json::{self, JsonValue};
+use std::io::{Read, Write};
+use std::path::PathBuf;
 
+#[derive(Debug, Clone)]
 pub struct WOFGeoJSON<'a> {
   json: &'a Object,
   pub id: i32,
@@ -15,7 +17,30 @@ pub struct WOFGeoJSON<'a> {
 }
 
 impl<'a> WOFGeoJSON<'a> {
-  pub fn as_valid_wof_geojson(json: &JsonValue) -> Result<WOFGeoJSON, String> {
+  pub fn parse_file_to_string(path: PathBuf) -> Result<String, String> {
+    if !path.exists() {
+      return Err(format!("File {} does not exists", path.as_path().display()));
+    }
+    let mut file = match std::fs::File::open(path) {
+      Ok(file) => file,
+      Err(e) => return Err(format!("{}", e)),
+    };
+    let mut buffer = String::new();
+    if let Err(e) = file.read_to_string(&mut buffer) {
+      return Err(format!("{}", e));
+    };
+    Ok(buffer)
+  }
+
+  pub fn parse_file_to_json(path: PathBuf) -> Result<JsonValue, String> {
+    let buffer = WOFGeoJSON::parse_file_to_string(path)?;
+    match json::parse(&buffer) {
+      Ok(json) => Ok(json),
+      Err(e) => return Err(format!("{}", e)),
+    }
+  }
+
+  pub fn as_valid_wof_geojson(json: &'a JsonValue) -> Result<Self, String> {
     json.assert_is_object()?;
     let json = json.as_object().unwrap();
     let props = if let Some(props) = json.get("properties") {
@@ -60,5 +85,20 @@ impl<'a> WOFGeoJSON<'a> {
 
   pub fn pretty(&self, mut writer: &mut dyn Write) -> Result<(), std::io::Error> {
     WOFGenerator::new(&mut writer).write_object(self.json)
+  }
+
+  fn is_property_deprecated(&self, prop: &'static str) -> bool {
+    match self.properties.get(prop) {
+      Some(JsonValue::String(ref s)) => s != "uuuu",
+      Some(JsonValue::Boolean(ref b)) => *b,
+      Some(JsonValue::Array(ref a)) => a.len() > 0,
+      _ => false,
+    }
+  }
+
+  pub fn is_deprecated(&self) -> bool {
+    self.is_property_deprecated("edtf:deprecated")
+      || self.is_property_deprecated("wof:superseded_by")
+      || self.is_property_deprecated("mz:is_current")
   }
 }

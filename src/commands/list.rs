@@ -1,4 +1,6 @@
+use ::wof::WOFGeoJSON;
 use regex::Regex;
+use std::path::PathBuf;
 use walkdir::WalkDir;
 
 use structopt::StructOpt;
@@ -11,6 +13,9 @@ pub struct List {
   /// List also alternate geometries.
   #[structopt(long = "alt")]
   pub alt: bool,
+  /// Don't print deprecated features.
+  #[structopt(long = "no-deprecated")]
+  pub no_deprecated: bool,
 }
 
 impl List {
@@ -36,10 +41,24 @@ impl List {
             continue;
           };
           if is_geojson && (self.alt || !is_altname) {
+            if self.should_skip(path.path().to_path_buf()).unwrap_or(true) {
+              continue;
+            }
             println!("{}", path.path().display());
           }
         }
       }
     }
+  }
+
+  fn should_skip(&self, path: PathBuf) -> Result<bool, String> {
+    if self.no_deprecated {
+      let json = WOFGeoJSON::parse_file_to_json(path.to_path_buf())?;
+      let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
+      if geojson.is_deprecated() {
+        return Ok(true);
+      }
+    }
+    Ok(false)
   }
 }
