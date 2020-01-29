@@ -1,9 +1,10 @@
+use crate::std::ResultExit;
 use ::wof::WOFGeoJSON;
 use regex::Regex;
+use std::io::Write;
 use std::path::PathBuf;
-use walkdir::WalkDir;
-
 use structopt::StructOpt;
+use walkdir::WalkDir;
 
 #[derive(Debug, StructOpt)]
 pub struct List {
@@ -44,7 +45,7 @@ impl List {
             if self.should_skip(path.path().to_path_buf()).unwrap_or(true) {
               continue;
             }
-            println!("{}", path.path().display());
+            writeln!(std::io::stdout(), "{}", path.path().display()).exit_silently();
           }
         }
       }
