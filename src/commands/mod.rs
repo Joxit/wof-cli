@@ -42,7 +42,7 @@ pub enum Command {
   /// Fetch WOF data from github.
   #[structopt(name = "fetch")]
   Fetch(Fetch),
-  /// Print to stdout WOF document by id.
+  /// Print to stdout WOF document by id. Can be via stdin or cmd argument.
   #[structopt(name = "print")]
   Print(Print),
   /// List all WOF document in the directory.

@@ -32,53 +32,67 @@ pub struct Print {
 impl Print {
   pub fn exec(&self) {
     for id in &self.ids {
-      let path = Print::get_path(&id);
-      if path.exists() && !path.is_dir() {
-        let mut file =
-          std::fs::File::open(path).expect_exit(format!("Can't open id {}", id).as_str());
-        let message_error = format!("Something goes wrong when printing {}", id);
-        if self.raw {
-          std::io::copy(&mut file, &mut std::io::stdout()).expect_exit(message_error.as_str());
-        } else {
-          let mut buffer = String::new();
-          file
-            .read_to_string(&mut buffer)
-            .expect_exit(message_error.as_str());
-          let mut json = json::parse(&mut buffer).expect_exit(message_error.as_str());
-          let obj = json.as_mut_object().expect_exit(message_error.as_str());
-          if self.no_geom {
-            obj.remove("geometry");
-          }
-          if let Some(props) = obj.get_mut("properties") {
-            let keys = props.keys();
-            for key in &keys {
-              for exclude in &self.excludes {
-                if key.starts_with(exclude.as_str()) {
-                  props.remove(key.as_str());
-                }
-              }
-            }
-            for key in &keys {
-              for include in &self.includes {
-                if !key.starts_with(include.as_str()) {
-                  props.remove(key.as_str());
-                }
-              }
-            }
-          };
-          if !self.no_pretty {
-            WOFGenerator::new(&mut std::io::stdout())
-              .write_json(&json)
-              .expect_exit(message_error.as_str());
-          } else {
-            DefaultGenerator::new(&mut std::io::stdout())
-              .write_json(&json)
-              .expect_exit(message_error.as_str());
-          }
+      self.print_from_string(&id);
+    }
+    loop {
+      let mut input = String::new();
+      match std::io::stdin().read_line(&mut input) {
+        Ok(0) => break,
+        Ok(_) => {
+          self.print_from_string(&input.trim().to_string());
         }
-      } else {
-        eprintln!("Skipping {}, does not exists", id);
+        Err(_) => break,
       }
+    }
+  }
+
+  fn print_from_string(&self, id: &String) {
+    let path = Print::get_path(&id);
+    if path.exists() && !path.is_dir() {
+      let mut file =
+        std::fs::File::open(path).expect_exit(format!("Can't open id {}", id).as_str());
+      let message_error = format!("Something goes wrong when printing {}", id);
+      if self.raw {
+        std::io::copy(&mut file, &mut std::io::stdout()).expect_exit(message_error.as_str());
+      } else {
+        let mut buffer = String::new();
+        file
+          .read_to_string(&mut buffer)
+          .expect_exit(message_error.as_str());
+        let mut json = json::parse(&mut buffer).expect_exit(message_error.as_str());
+        let obj = json.as_mut_object().expect_exit(message_error.as_str());
+        if self.no_geom {
+          obj.remove("geometry");
+        }
+        if let Some(props) = obj.get_mut("properties") {
+          let keys = props.keys();
+          for key in &keys {
+            for exclude in &self.excludes {
+              if key.starts_with(exclude.as_str()) {
+                props.remove(key.as_str());
+              }
+            }
+          }
+          for key in &keys {
+            for include in &self.includes {
+              if !key.starts_with(include.as_str()) {
+                props.remove(key.as_str());
+              }
+            }
+          }
+        };
+        if !self.no_pretty {
+          WOFGenerator::new(&mut std::io::stdout())
+            .write_json(&json)
+            .expect_exit(message_error.as_str());
+        } else {
+          DefaultGenerator::new(&mut std::io::stdout())
+            .write_json(&json)
+            .expect_exit(message_error.as_str());
+        }
+      }
+    } else {
+      eprintln!("Skipping {}, does not exists", id);
     }
   }
 
