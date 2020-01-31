@@ -2,10 +2,10 @@ use crate::ser::{DefaultGenerator, Generator, WOFGenerator};
 use crate::std::ResultExit;
 use crate::utils::{self, JsonUtils};
 use json;
+use libc;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::string::String;
-
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -33,6 +33,11 @@ impl Print {
   pub fn exec(&self) {
     for id in &self.ids {
       self.print_from_string(&id);
+    }
+    unsafe {
+      if libc::isatty(libc::STDIN_FILENO) != 0 {
+        return;
+      }
     }
     loop {
       let mut input = String::new();
