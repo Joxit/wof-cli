@@ -7,6 +7,8 @@ mod git;
 pub mod ser;
 mod std;
 pub mod utils;
+mod walk;
+mod wof;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "wof", author, about)]
