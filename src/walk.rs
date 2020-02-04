@@ -27,7 +27,7 @@ impl Walk {
     if !self.with_deprecated {
       let json = WOFGeoJSON::parse_file_to_json(path.to_path_buf())?;
       let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
-      if geojson.is_deprecated() {
+      if geojson.is_doc_deprecated() {
         return Ok(true);
       }
     }

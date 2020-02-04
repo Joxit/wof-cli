@@ -1,4 +1,3 @@
-//! How to extract subcommands' args into external structs.
 use crate::commands::Command;
 use structopt::StructOpt;
 

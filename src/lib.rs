@@ -1,4 +1,5 @@
 pub mod ser;
+pub mod sqlite;
 mod std;
 pub mod utils;
 mod wof;
