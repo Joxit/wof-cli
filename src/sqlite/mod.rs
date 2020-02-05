@@ -1,8 +1,6 @@
 use crate::std::StringifyError;
 use crate::wof::WOFGeoJSON;
-use json::object;
-use rusqlite::{params, Connection, ToSql};
-use std::io::Write;
+use rusqlite::{params, Connection};
 use std::path::{Path, PathBuf};
 mod statements;
 
@@ -61,7 +59,13 @@ impl SQLite {
     Ok(())
   }
 
-  fn add(&self, document: WOFGeoJSON) -> Result<(), String> {
+  pub fn add_file<P: AsRef<Path>>(&self, path: P) -> Result<(), String> {
+    let json = WOFGeoJSON::parse_file_to_json(path.as_ref().to_path_buf())?;
+    let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
+    self.add(geojson)
+  }
+
+  pub fn add(&self, document: WOFGeoJSON) -> Result<(), String> {
     self
       .add_to_geojson(&document)
       .stringify_err("add document to geojson table")?;
@@ -73,17 +77,18 @@ impl SQLite {
 
   fn add_to_geojson(&self, doc: &WOFGeoJSON) -> Result<(), rusqlite::Error> {
     let mut input: Vec<u8> = Vec::new();
-    doc.pretty(&mut input);
-    self.conn.execute(
-      statements::INSERT_GEOJSON,
-      params![
-        doc.id,
-        &input,
-        doc.get_source(),
-        doc.is_alt_geom(),
-        doc.get_last_modified()
-      ],
-    )?;
+    if let Ok(_) = doc.pretty(&mut input) {
+      self.conn.execute(
+        statements::INSERT_GEOJSON,
+        params![
+          doc.id,
+          &input,
+          doc.get_source(),
+          doc.is_alt_geom(),
+          doc.get_last_modified()
+        ],
+      )?;
+    }
     Ok(())
   }
 

@@ -1,6 +1,5 @@
 use crate::commands::export::Export;
 use crate::commands::shapefile::Shapefile;
-use crate::commands::sqlite::SQLite;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -15,7 +14,6 @@ impl Install {
     match self.package.as_ref() {
       "export" => Export::install(),
       "shapefile" => Shapefile::install(),
-      "sqlite" => SQLite::install(),
       _ => {
         eprintln!("Incorrect package to install.");
         std::process::exit(127)

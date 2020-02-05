@@ -4,6 +4,7 @@ use structopt::StructOpt;
 mod commands;
 mod git;
 pub mod ser;
+mod sqlite;
 mod std;
 pub mod utils;
 mod walk;
