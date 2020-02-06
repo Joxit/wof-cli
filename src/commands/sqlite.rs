@@ -16,6 +16,9 @@ pub struct SQLite {
   /// Don't insert deprecated features.
   #[structopt(long = "no-deprecated")]
   pub no_deprecated: bool,
+  /// Don't insert deprecated features.
+  #[structopt(long = "no-pretty")]
+  pub no_pretty: bool,
   /// Display timings during the build process, implies verbose.
   #[structopt(long = "timings")]
   pub timings: bool,
@@ -34,7 +37,13 @@ impl SQLite {
 
     assert_directory_exists(&parent);
 
-    let sqlite = sqlite::SQLite::new(out_path).expect_exit("Can't open the database");
+    let sqlite = sqlite::SQLite::new(
+      out_path,
+      sqlite::SQLiteOpts {
+        pretty: !self.no_pretty,
+      },
+    )
+    .expect_exit("Can't open the database");
     sqlite.create_indexes().expect_exit("Can't create indexes");
     for directory in &self.directories {
       for entry in Walk::new(directory.to_string(), false, !self.no_deprecated) {

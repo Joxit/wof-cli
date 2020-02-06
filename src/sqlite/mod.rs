@@ -1,17 +1,25 @@
 use crate::std::StringifyError;
 use crate::wof::WOFGeoJSON;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, Error as SQLiteError};
 use std::path::{Path, PathBuf};
 mod statements;
 
+#[derive(Debug)]
 pub struct SQLite {
   conn: Connection,
+  opts: SQLiteOpts,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SQLiteOpts {
+  pub pretty: bool,
 }
 
 impl SQLite {
-  pub fn new(path: PathBuf) -> Result<Self, String> {
+  pub fn new(path: PathBuf, opts: SQLiteOpts) -> Result<Self, String> {
     Ok(SQLite {
       conn: Connection::open(path.as_path()).stringify_err("connection to database")?,
+      opts: opts,
     })
   }
 
@@ -75,9 +83,13 @@ impl SQLite {
     Ok(())
   }
 
-  fn add_to_geojson(&self, doc: &WOFGeoJSON) -> Result<(), rusqlite::Error> {
+  fn add_to_geojson(&self, doc: &WOFGeoJSON) -> Result<(), SQLiteError> {
     let mut input: Vec<u8> = Vec::new();
-    if let Ok(_) = doc.pretty(&mut input) {
+    if let Ok(_) = if self.opts.pretty {
+      doc.pretty(&mut input)
+    } else {
+      doc.dump(&mut input)
+    } {
       self.conn.execute(
         statements::INSERT_GEOJSON,
         params![
@@ -88,11 +100,13 @@ impl SQLite {
           doc.get_last_modified()
         ],
       )?;
+      Ok(())
+    } else {
+      Err(SQLiteError::StatementChangedRows(0))
     }
-    Ok(())
   }
 
-  fn add_to_spr(&self, doc: &WOFGeoJSON) -> Result<(), rusqlite::Error> {
+  fn add_to_spr(&self, doc: &WOFGeoJSON) -> Result<(), SQLiteError> {
     self.conn.execute(
       statements::INSERT_SPR,
       params![
