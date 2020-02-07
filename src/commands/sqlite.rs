@@ -41,15 +41,32 @@ impl SQLite {
       out_path,
       sqlite::SQLiteOpts {
         pretty: !self.no_pretty,
+        deprecated: !self.no_deprecated,
       },
     )
     .expect_exit("Can't open the database");
     sqlite.create_indexes().expect_exit("Can't create indexes");
-    for directory in &self.directories {
-      for entry in Walk::new(directory.to_string(), false, !self.no_deprecated) {
-        if let Ok(path) = entry {
-          if let Err(e) = sqlite.add_file(path.path()) {
-            eprintln!("Something goes wrong for {}: {}", path.path().display(), e);
+
+    if crate::commands::input_pipe() {
+      loop {
+        let mut buffer = String::new();
+        match std::io::stdin().read_line(&mut buffer) {
+          Ok(0) => break,
+          Ok(_) => {
+            if let Err(e) = sqlite.add_string(buffer) {
+              eprintln!("Something goes wrong {}", e);
+            }
+          }
+          Err(_) => break,
+        }
+      }
+    } else {
+      for directory in &self.directories {
+        for entry in Walk::new(directory.to_string(), false, true) {
+          if let Ok(path) = entry {
+            if let Err(e) = sqlite.add_file(path.path()) {
+              eprintln!("Something goes wrong for {}: {}", path.path().display(), e);
+            }
           }
         }
       }

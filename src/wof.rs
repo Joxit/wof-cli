@@ -43,6 +43,13 @@ impl<'a> WOFGeoJSON<'a> {
     }
   }
 
+  pub fn parse_string_to_json(buffer: String) -> Result<JsonValue, String> {
+    match json::parse(&buffer) {
+      Ok(json) => Ok(json),
+      Err(e) => return Err(format!("{}", e)),
+    }
+  }
+
   pub fn as_valid_wof_geojson(json: &'a JsonValue) -> Result<Self, String> {
     json.assert_is_object()?;
     let json = json.as_object().unwrap();

@@ -1,4 +1,4 @@
-use crate::commands::download_tar_gz_strip;
+use crate::commands::{download_tar_gz_stream_geojson, download_tar_gz_strip, output_pipe};
 use crate::utils;
 use std::path::Path;
 use structopt::StructOpt;
@@ -28,10 +28,16 @@ impl Fetch {
       &all_countries
     };
 
+    let stdout = output_pipe();
+
     for country in countries {
       if self.admin.unwrap_or(true) {
         let url = Fetch::get_url(country.to_string(), "admin");
-        if let Err(e) = download_tar_gz_strip(url.to_string(), download_dest.to_path_buf(), 1) {
+        if let Err(e) = if stdout {
+          download_tar_gz_stream_geojson(url.to_string())
+        } else {
+          download_tar_gz_strip(url.to_string(), download_dest.to_path_buf(), 1)
+        } {
           eprintln!("Something goes wrong when downloading `{}`: {}", url, e);
         }
       }

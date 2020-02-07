@@ -13,6 +13,7 @@ pub struct SQLite {
 #[derive(Debug, Clone, Default)]
 pub struct SQLiteOpts {
   pub pretty: bool,
+  pub deprecated: bool,
 }
 
 impl SQLite {
@@ -73,7 +74,17 @@ impl SQLite {
     self.add(geojson)
   }
 
+  pub fn add_string(&self, buf: String) -> Result<(), String> {
+    let json = WOFGeoJSON::parse_string_to_json(buf)?;
+    let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
+    self.add(geojson)
+  }
+
   pub fn add(&self, document: WOFGeoJSON) -> Result<(), String> {
+    if !self.opts.deprecated && document.is_doc_deprecated() {
+      return Ok(());
+    }
+
     self
       .add_to_geojson(&document)
       .stringify_err("add document to geojson table")?;

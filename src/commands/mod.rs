@@ -8,6 +8,7 @@ use crate::commands::shapefile::Shapefile;
 use crate::commands::sqlite::SQLite;
 use crate::std::{ResultExit, StringifyError};
 use flate2::read::GzDecoder;
+use regex::Regex;
 use std::path::PathBuf;
 use std::result::Result;
 use structopt::StructOpt;
@@ -193,4 +194,86 @@ pub fn download_tar_gz_strip(
     }
   }
   Ok(())
+}
+
+pub fn download_tar_gz_stream_geojson(url: String) -> Result<(), String> {
+  use crate::wof::{JsonValue, WOFGeoJSON};
+  use std::ffi::OsStr;
+  use std::io::{Read, Write};
+  let (status, _, read) = attohttpc::get(url)
+    .send()
+    .stringify_err("Download error")?
+    .split();
+  let geojson_regex = Regex::new(r"\.geojson$").unwrap();
+  let alt_regex = Regex::new(r"^\d+-alt.*\.geojson$").unwrap();
+
+  if !status.is_success() {
+    let reason = if let Some(reason) = status.canonical_reason() {
+      reason
+    } else {
+      "Download is not a success"
+    };
+    return Err(reason.to_string());
+  }
+
+  let decode = GzDecoder::new(read);
+
+  for entry in Archive::new(decode)
+    .entries()
+    .stringify_err("Extraction list error")?
+  {
+    if !entry.is_ok() {
+      continue;
+    }
+    let mut entry = entry.unwrap();
+    let path = entry
+      .path()
+      .stringify_err("Extraction (entry path) error")?;
+
+    let (is_geojson, is_altname) =
+      if let Some(file_name) = path.file_name().unwrap_or(OsStr::new("")).to_str() {
+        (
+          geojson_regex.is_match(file_name),
+          alt_regex.is_match(file_name),
+        )
+      } else {
+        (false, false)
+      };
+
+    if !is_geojson || is_altname {
+      continue;
+    }
+
+    let mut buffer = String::new();
+    if let Err(_) = entry.read_to_string(&mut buffer) {
+      buffer.push_str("{}");
+    };
+
+    let json = json::parse(&buffer).unwrap_or(JsonValue::new_object());
+    if let Ok(geojson) = WOFGeoJSON::as_valid_wof_geojson(&json) {
+      geojson.dump(&mut std::io::stdout()).exit_silently();
+      writeln!(std::io::stdout(), "").exit_silently();
+    }
+  }
+  Ok(())
+}
+
+pub fn input_pipe() -> bool {
+  unsafe {
+    if libc::isatty(libc::STDIN_FILENO) == 0 {
+      true
+    } else {
+      false
+    }
+  }
+}
+
+pub fn output_pipe() -> bool {
+  unsafe {
+    if libc::isatty(libc::STDOUT_FILENO) == 0 {
+      true
+    } else {
+      false
+    }
+  }
 }

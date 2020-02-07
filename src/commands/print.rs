@@ -2,7 +2,6 @@ use crate::ser::{DefaultGenerator, Generator, WOFGenerator};
 use crate::std::ResultExit;
 use crate::utils::{self, JsonUtils};
 use json;
-use libc;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::string::String;
@@ -34,11 +33,10 @@ impl Print {
     for id in &self.ids {
       self.print_from_string(&id);
     }
-    unsafe {
-      if libc::isatty(libc::STDIN_FILENO) != 0 {
-        return;
-      }
+    if crate::commands::input_pipe() {
+      return;
     }
+
     loop {
       let mut input = String::new();
       match std::io::stdin().read_line(&mut input) {
