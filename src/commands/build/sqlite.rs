@@ -19,6 +19,9 @@ pub struct SQLite {
   /// Don't insert deprecated features.
   #[structopt(long = "no-pretty")]
   pub no_pretty: bool,
+  /// Preset for pelias use. Will insert only in geojson and spr tables.
+  #[structopt(long = "preset", possible_values = &["pelias"])]
+  pub preset: Option<String>,
   /// Display timings during the build process, implies verbose.
   #[structopt(long = "timings")]
   pub timings: bool,
@@ -37,11 +40,21 @@ impl SQLite {
 
     assert_directory_exists(&parent);
 
+    let pelias_preset = if let Some(preset) = &self.preset {
+      *preset == String::from("pelias")
+    } else {
+      false
+    };
+
     let sqlite = sqlite::SQLite::new(
       out_path,
       sqlite::SQLiteOpts {
         pretty: !self.no_pretty,
         deprecated: !self.no_deprecated,
+        names: !pelias_preset,
+        ancestors: !pelias_preset,
+        concordances: !pelias_preset,
+        ..Default::default()
       },
     )
     .expect_exit("Can't open the database");

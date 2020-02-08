@@ -82,6 +82,15 @@ pub const TABLE_NAMES: &'static str = r#"CREATE TABLE IF NOT EXISTS names (
    lastmodified INTEGER
 );"#;
 
+pub const INSERT_NAMES: &'static str = r#"
+INSERT OR REPLACE INTO names (
+   id, placetype, country, language, extlang, script,
+   region, variant, extension, privateuse, name, lastmodified
+) VALUES (
+	?, ?, ?, ?, ?, ?,
+	?, ?, ?, ?, ?, ?
+);"#;
+
 pub const INDEXES_NAMES: &'static str = r#"CREATE INDEX IF NOT EXISTS names_by_lastmod ON names (lastmodified);
 CREATE INDEX IF NOT EXISTS names_by_country ON names (country,privateuse,placetype);
 CREATE INDEX IF NOT EXISTS names_by_language ON names (language,privateuse,placetype);
@@ -101,6 +110,13 @@ pub const INDEXES_ANCESTORS: &'static str = r#"CREATE INDEX IF NOT EXISTS ancest
 CREATE INDEX IF NOT EXISTS ancestors_by_ancestor ON ancestors (ancestor_id,ancestor_placetype,lastmodified);
 CREATE INDEX IF NOT EXISTS ancestors_by_lastmod ON ancestors (lastmodified);"#;
 
+pub const INSERT_ANCESTORS: &'static str = r#"
+INSERT OR REPLACE INTO ancestors (
+   id, ancestor_id, ancestor_placetype, lastmodified
+) VALUES (
+	?, ?, ?, ?
+);"#;
+
 pub const TABLE_CONCORDANCES: &'static str = r#"CREATE TABLE IF NOT EXISTS concordances (
 	id INTEGER NOT NULL,
 	other_id INTEGER NOT NULL,
@@ -112,3 +128,20 @@ pub const INDEXES_CONCORDANCES: &'static str = r#"CREATE INDEX IF NOT EXISTS con
 CREATE INDEX IF NOT EXISTS concordances_by_other_id ON concordances (other_source,other_id);
 CREATE INDEX IF NOT EXISTS concordances_by_other_lastmod ON concordances (other_source,other_id,lastmodified);
 CREATE INDEX IF NOT EXISTS concordances_by_lastmod ON concordances (lastmodified);"#;
+
+pub const INSERT_CONCORDANCES: &'static str = r#"
+INSERT OR REPLACE INTO concordances (
+   id, other_id, other_source, lastmodified
+) VALUES (
+	?, ?, ?, ?
+);"#;
+
+// Tweaks for perf:
+// https://www.sqlite.org/pragma.html
+// https://blog.devart.com/increasing-sqlite-performance.html
+pub const PRAGMA: &'static str = r#"PRAGMA JOURNAL_MODE=OFF;
+PRAGMA SYNCHRONOUS=OFF;
+PRAGMA LOCKING_MODE=EXCLUSIVE;
+PRAGMA PAGE_SIZE=4096;
+PRAGMA CACHE_SIZE=1000000;
+PRAGMA TEMP_STORE=MEMORY;"#;

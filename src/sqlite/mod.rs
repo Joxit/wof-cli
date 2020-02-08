@@ -10,10 +10,15 @@ pub struct SQLite {
   opts: SQLiteOpts,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct SQLiteOpts {
   pub pretty: bool,
   pub deprecated: bool,
+  pub geojson: bool,
+  pub spr: bool,
+  pub names: bool,
+  pub ancestors: bool,
+  pub concordances: bool,
 }
 
 impl SQLite {
@@ -65,6 +70,10 @@ impl SQLite {
       .conn
       .execute_batch(statements::INDEXES_CONCORDANCES)
       .stringify_err("concordances indexes")?;
+    self
+      .conn
+      .execute_batch(statements::PRAGMA)
+      .stringify_err("pragma statements")?;
     Ok(())
   }
 
@@ -84,13 +93,31 @@ impl SQLite {
     if !self.opts.deprecated && document.is_doc_deprecated() {
       return Ok(());
     }
-
-    self
-      .add_to_geojson(&document)
-      .stringify_err("add document to geojson table")?;
-    self
-      .add_to_spr(&document)
-      .stringify_err("add document to spr table")?;
+    if self.opts.geojson {
+      self
+        .add_to_geojson(&document)
+        .stringify_err("add document to geojson table")?;
+    }
+    if self.opts.spr {
+      self
+        .add_to_spr(&document)
+        .stringify_err("add document to spr table")?;
+    }
+    if self.opts.names {
+      self
+        .add_to_names(&document)
+        .stringify_err("add document to names table")?;
+    }
+    if self.opts.ancestors {
+      self
+        .add_to_ancestors(&document)
+        .stringify_err("add document to ancestors table")?;
+    }
+    if self.opts.concordances {
+      self
+        .add_to_concordances(&document)
+        .stringify_err("add document to ancestors table")?;
+    }
     Ok(())
   }
 
@@ -144,6 +171,73 @@ impl SQLite {
       ],
     )?;
     Ok(())
+  }
+
+  fn add_to_names(&self, doc: &WOFGeoJSON) -> Result<(), SQLiteError> {
+    for name in doc.get_names() {
+      self.conn.execute(
+        statements::INSERT_NAMES,
+        params![
+          doc.id,
+          doc.get_placetype(),
+          doc.get_country(),
+          name.lang,
+          name.extlang,
+          "", // script
+          "", // region
+          "", // variant
+          "", // extension
+          name.variant,
+          name.value,
+          doc.get_last_modified()
+        ],
+      )?;
+    }
+    Ok(())
+  }
+
+  fn add_to_ancestors(&self, doc: &WOFGeoJSON) -> Result<(), SQLiteError> {
+    for (ancestor_id, ancestor_placetype) in doc.get_ancestors() {
+      self.conn.execute(
+        statements::INSERT_ANCESTORS,
+        params![
+          doc.id,
+          ancestor_id,
+          ancestor_placetype,
+          doc.get_last_modified()
+        ],
+      )?;
+    }
+    Ok(())
+  }
+
+  fn add_to_concordances(&self, doc: &WOFGeoJSON) -> Result<(), SQLiteError> {
+    for (concordance_id, concordance_source) in doc.get_concordances() {
+      self.conn.execute(
+        statements::INSERT_CONCORDANCES,
+        params![
+          doc.id,
+          concordance_id,
+          concordance_source,
+          doc.get_last_modified()
+        ],
+      )?;
+    }
+    Ok(())
+  }
+}
+
+impl Default for SQLiteOpts {
+  fn default() -> Self {
+    SQLiteOpts {
+      pretty: true,
+      deprecated: true,
+      geojson: true,
+      spr: true,
+      names: true,
+      ancestors: true,
+      concordances: true,
+    }
   }
 }
 

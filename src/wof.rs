@@ -3,6 +3,7 @@ use crate::std::StringifyError;
 use crate::utils::JsonUtils;
 pub use json::object::Object;
 pub use json::{self, JsonValue};
+use regex::Regex;
 use std::io::{Read, Write};
 use std::path::PathBuf;
 
@@ -14,6 +15,14 @@ pub struct WOFGeoJSON<'a> {
   pub properties: &'a Object,
   pub bbox: Vec<f64>,
   pub geometry: &'a Object,
+}
+
+#[derive(Debug, Clone)]
+pub struct WofName<'a> {
+  pub lang: &'a str,
+  pub extlang: Option<&'a str>,
+  pub variant: &'a str,
+  pub value: &'a str,
 }
 
 impl<'a> WOFGeoJSON<'a> {
@@ -133,8 +142,9 @@ impl<'a> WOFGeoJSON<'a> {
     }
   }
 
-  fn get_as_string_or_else(&self, prop: &'static str, or_else: &'static str) -> String {
+  fn get_as_string_or_else<'s>(&self, prop: &'s str, or_else: &'s str) -> String {
     match self.properties.get(prop) {
+      Some(JsonValue::Short(s)) => s.to_string(),
       Some(JsonValue::String(s)) => s.to_string(),
       _ => or_else.to_string(),
     }
@@ -176,7 +186,10 @@ impl<'a> WOFGeoJSON<'a> {
   }
 
   pub fn get_last_modified(&self) -> i32 {
-    self.get_as_i32_or_else("lastmodified", -1)
+    self.get_as_i32_or_else(
+      "lastmodified",
+      self.get_as_i32_or_else("wof:lastmodified", -1),
+    )
   }
 
   pub fn get_parent_id(&self) -> i32 {
@@ -184,15 +197,88 @@ impl<'a> WOFGeoJSON<'a> {
   }
 
   pub fn get_placetype(&self) -> String {
-    self.get_as_string_or_else("wof:placetype", "")
+    self.get_as_string_or_else(
+      "placetype",
+      self.get_as_string_or_else("wof:placetype", "").as_str(),
+    )
   }
 
   pub fn get_name(&self) -> String {
-    self.get_as_string_or_else("wof:name", "")
+    self.get_as_string_or_else("wof:name", self.get_as_string_or_else("name", "").as_str())
+  }
+
+  pub fn get_names(&self) -> Vec<WofName> {
+    let mut names: Vec<WofName> = vec![];
+    let regex = Regex::new(
+      r"name:(?P<lang>[a-zA-Z]{3})_((?P<extlang>[a-zA-Z_]+)_)?(?P<variant>x_[a-zA-Z_]+)$",
+    )
+    .unwrap();
+    for (k, wof_names) in self.properties.iter() {
+      if let Some(cap) = regex.captures(k) {
+        let wof_names = wof_names.as_array();
+        if !cap.name("lang").is_some() || !cap.name("variant").is_some() || !wof_names.is_some() {
+          continue;
+        }
+        let wof_names = wof_names.unwrap();
+        for wof_name in wof_names {
+          if let Some(wof_name) = wof_name.as_str() {
+            names.push(WofName {
+              lang: cap.name("lang").unwrap().as_str(),
+              extlang: cap.name("extlang").map(|e| e.as_str()),
+              variant: cap.name("variant").unwrap().as_str(),
+              value: wof_name,
+            });
+          }
+        }
+      }
+    }
+    names
   }
 
   pub fn get_country(&self) -> String {
     self.get_as_string_or_else("wof:country", "")
+  }
+
+  pub fn get_ancestors(&self) -> Vec<(i32, String)> {
+    let mut ancestors: Vec<(i32, String)> = vec![];
+    let regex = Regex::new(r"(?P<placetype>[a-zA-Z]*)_id$").unwrap();
+    if let Some(wof_hierarchy) = self.properties.get("wof:hierarchy") {
+      if let Some(hierarchies) = wof_hierarchy.as_array() {
+        for hierarchy in hierarchies {
+          let hierarchy = hierarchy.as_object();
+          if !hierarchy.is_some() {
+            continue;
+          }
+          for (placetype, id) in hierarchy.unwrap().iter() {
+            if let Some(cap) = regex.captures(placetype) {
+              if !cap.name("placetype").is_some() || !id.as_i32().is_some() {
+                continue;
+              }
+              ancestors.push((
+                id.as_i32().unwrap(),
+                cap.name("placetype").unwrap().as_str().to_string(),
+              ));
+            }
+          }
+        }
+      }
+    }
+    ancestors
+  }
+
+  pub fn get_concordances(&self) -> Vec<(i32, String)> {
+    let mut concordances: Vec<(i32, String)> = vec![];
+    if let Some(wof_concordances) = self.properties.get("wof:concordances") {
+      if let Some(wof_concordances) = wof_concordances.as_object() {
+        for (source, id) in wof_concordances.iter() {
+          if !id.as_i32().is_some() {
+            continue;
+          }
+          concordances.push((id.as_i32().unwrap(), source.to_string()));
+        }
+      }
+    }
+    concordances
   }
 
   pub fn get_repo(&self) -> String {
