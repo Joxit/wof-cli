@@ -2,7 +2,7 @@ use crate::ser::{DefaultGenerator, Generator, WOFGenerator};
 use crate::std::ResultExit;
 use crate::utils::{self, JsonUtils};
 use json;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::string::String;
 use structopt::StructOpt;
@@ -33,7 +33,7 @@ impl Print {
     for id in &self.ids {
       self.print_from_string(&id);
     }
-    if crate::commands::input_pipe() {
+    if !crate::commands::input_pipe() {
       return;
     }
 
@@ -92,6 +92,7 @@ impl Print {
           DefaultGenerator::new(&mut std::io::stdout())
             .write_json(&json)
             .expect_exit(message_error.as_str());
+          writeln!(std::io::stdout(), "").expect_exit(message_error.as_str());
         }
       }
     } else {

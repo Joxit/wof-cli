@@ -1,5 +1,5 @@
+use crate::commands::build::Shapefile;
 use crate::commands::export::Export;
-use crate::commands::shapefile::Shapefile;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]

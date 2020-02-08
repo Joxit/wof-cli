@@ -1,9 +1,9 @@
 FROM rust:1-slim-buster as rust-builder
 
 WORKDIR /opt/rust/wof
-COPY Cargo.toml .
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git libssl-dev libgit2-dev pkg-config
+    && apt-get install -y --no-install-recommends git pkg-config make
+COPY Cargo.toml .
 RUN cargo fetch
 COPY src src
 RUN cargo build --release
@@ -18,9 +18,9 @@ RUN wof install export
 
 FROM debian:buster
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libssl1.1 libgit2-27 python2 \
+    && apt-get install -y --no-install-recommends python2 ca-certificates \
     && mkdir /root/.wof \
-    ln -s /usr/bin/python2 /usr/local/bin/python
+    && ln -s /usr/bin/python2 /usr/local/bin/python
 COPY --from=rust-builder /opt/rust/wof/target/release/wof /bin/
 COPY --from=go-builder /root/.wof /root/.wof
 COPY --from=python-builder /root/.wof /root/.wof

@@ -1,11 +1,10 @@
+use crate::commands::build::Build;
 use crate::commands::completion::Completion;
 use crate::commands::export::Export;
 use crate::commands::fetch::Fetch;
 use crate::commands::install::Install;
 use crate::commands::list::List;
 use crate::commands::print::Print;
-use crate::commands::shapefile::Shapefile;
-use crate::commands::sqlite::SQLite;
 use crate::std::{ResultExit, StringifyError};
 use flate2::read::GzDecoder;
 use regex::Regex;
@@ -14,23 +13,19 @@ use std::result::Result;
 use structopt::StructOpt;
 use tar::Archive;
 
+mod build;
 mod completion;
 mod export;
 mod fetch;
 mod install;
 mod list;
 mod print;
-mod shapefile;
-mod sqlite;
 
 #[derive(Debug, StructOpt)]
 pub enum Command {
-  /// Who's On First documents to ESRI shapefiles.
-  #[structopt(name = "shapefile")]
-  Shapefile(Shapefile),
-  /// Who's On First documents to SQLite database.
-  #[structopt(name = "sqlite")]
-  SQLite(SQLite),
+  /// Build a WOF database (sqlite or shapefile).
+  #[structopt(name = "build")]
+  Build(Build),
   /// Export tools for the Who's On First documents.
   #[structopt(name = "export")]
   Export(Export),
@@ -59,14 +54,13 @@ impl Command {
     std::env::set_var("PYTHONUSERBASE", format!("{}/.wof/", home));
 
     match self {
-      Command::Shapefile(executable) => executable.exec(),
       Command::Export(executable) => executable.exec(),
       Command::Install(executable) => executable.exec(),
       Command::Completion(executable) => executable.exec(),
-      Command::SQLite(executable) => executable.exec(),
       Command::Fetch(executable) => executable.exec(),
       Command::Print(executable) => executable.exec(),
       Command::List(executable) => executable.exec(),
+      Command::Build(executable) => executable.exec(),
     }
   }
 
