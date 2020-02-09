@@ -1,6 +1,6 @@
 use crate::commands::Command;
 use crate::git::Git;
-use crate::std::ResultExit;
+use crate::utils::ResultExit;
 use std::default::Default;
 use structopt::StructOpt;
 

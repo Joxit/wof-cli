@@ -1,4 +1,4 @@
-use crate::std::ResultExit;
+use crate::utils::ResultExit;
 use git2::{DiffFormat, DiffLine, ObjectType, Repository};
 use std::path::PathBuf;
 use std::vec::Vec;

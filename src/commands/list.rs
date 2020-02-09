@@ -1,4 +1,4 @@
-use crate::std::ResultExit;
+use crate::utils::ResultExit;
 use crate::walk::Walk;
 use std::io::Write;
 use structopt::StructOpt;

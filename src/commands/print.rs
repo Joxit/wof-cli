@@ -1,7 +1,8 @@
 use crate::ser::{DefaultGenerator, Generator, WOFGenerator};
-use crate::std::ResultExit;
+use crate::utils::ResultExit;
 use crate::utils::{self, JsonUtils};
 use json;
+use log::error;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::string::String;
@@ -30,6 +31,7 @@ pub struct Print {
 
 impl Print {
   pub fn exec(&self) {
+    crate::utils::logger::set_verbose(false, "wof::print").expect_exit("Can't init logger.");
     for id in &self.ids {
       self.print_from_string(&id);
     }
@@ -96,7 +98,7 @@ impl Print {
         }
       }
     } else {
-      eprintln!("Skipping {}, does not exists", id);
+      error!("Skipping {}, does not exists", id);
     }
   }
 

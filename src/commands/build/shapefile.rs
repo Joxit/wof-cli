@@ -1,5 +1,5 @@
 use crate::commands::Command;
-use crate::std::ResultExit;
+use crate::utils::ResultExit;
 use structopt::StructOpt;
 
 static BINARY: &'static str = "wof-shapefile-index";
