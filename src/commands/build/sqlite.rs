@@ -64,8 +64,8 @@ impl SQLite {
     )
     .expect_exit("Can't open the database");
 
-    info!("Will create indexes.");
-    sqlite.create_indexes().expect_exit("Can't create indexes");
+    info!("Will create tables.");
+    sqlite.create_tables().expect_exit("Can't create tables");
 
     if crate::commands::input_pipe() {
       info!("Start import from stdin.");

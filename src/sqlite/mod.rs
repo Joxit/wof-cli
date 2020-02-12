@@ -1,35 +1,48 @@
+//! Module to create and add documents to WOF SQLites databases.
 use crate::std::StringifyError;
 use crate::wof::WOFGeoJSON;
 use rusqlite::{params, Connection, Error as SQLiteError};
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 mod statements;
 
+/// SQLite structure, own a connection to the database with options.
 #[derive(Debug)]
 pub struct SQLite {
   conn: Connection,
   opts: SQLiteOpts,
 }
 
+/// Options for the database, default values are the official configuration.
 #[derive(Debug, Clone)]
 pub struct SQLiteOpts {
+  /// If true, will prettify the document in the geojson table.
   pub pretty: bool,
+  /// If true, will also process deprecated documents.
   pub deprecated: bool,
+  /// If true, will add documents in geojson table.
   pub geojson: bool,
+  /// If true, will add documents in spr table.
   pub spr: bool,
+  /// If true, will add documents in names table.
   pub names: bool,
+  /// If true, will add documents in ancestors table.
   pub ancestors: bool,
+  /// If true, will add documents in concordances table.
   pub concordances: bool,
 }
 
 impl SQLite {
-  pub fn new(path: PathBuf, opts: SQLiteOpts) -> Result<Self, String> {
+
+    /// Create a connection to a database, the parent folder should exists.
+  pub fn new<P: AsRef<Path>>(path: P, opts: SQLiteOpts) -> Result<Self, String> {
     Ok(SQLite {
-      conn: Connection::open(path.as_path()).stringify_err("connection to database")?,
+      conn: Connection::open(path).stringify_err("connection to database")?,
       opts: opts,
     })
   }
 
-  pub fn create_indexes(&self) -> Result<(), String> {
+/// Create all tables, indexes and configure the database.
+  pub fn create_tables(&self) -> Result<(), String> {
     self
       .conn
       .execute_batch(statements::TABLE_GEOJSON)
@@ -77,18 +90,22 @@ impl SQLite {
     Ok(())
   }
 
+/// Add a file to the database, the file must be a WOF GeoJSON.
   pub fn add_file<P: AsRef<Path>>(&self, path: P) -> Result<(), String> {
     let json = WOFGeoJSON::parse_file_to_json(path.as_ref().to_path_buf())?;
     let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
     self.add(geojson)
   }
 
+/// Add the string content to the database, it must be a WOF GeoJSON.
   pub fn add_string(&self, buf: String) -> Result<(), String> {
     let json = WOFGeoJSON::parse_string_to_json(buf)?;
     let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
     self.add(geojson)
   }
 
+/// Add a WOFGeoJSON document to the database.
+/// The `SQLiteOpts` is used here and it will define in which table the document should be added.
   pub fn add(&self, document: WOFGeoJSON) -> Result<(), String> {
     if !self.opts.deprecated && document.is_doc_deprecated() {
       return Ok(());
