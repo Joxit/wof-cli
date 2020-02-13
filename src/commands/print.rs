@@ -1,4 +1,4 @@
-use crate::ser::{DefaultGenerator, Generator, WOFGenerator};
+use crate::ser::{json_to_writer, json_to_writer_pretty};
 use crate::utils::ResultExit;
 use crate::utils::{self, JsonUtils};
 use json;
@@ -87,13 +87,9 @@ impl Print {
           }
         };
         if !self.no_pretty {
-          WOFGenerator::new(&mut std::io::stdout())
-            .write_json(&json)
-            .expect_exit(message_error.as_str());
+          json_to_writer_pretty(&json, &mut std::io::stdout()).expect_exit(message_error.as_str());
         } else {
-          DefaultGenerator::new(&mut std::io::stdout())
-            .write_json(&json)
-            .expect_exit(message_error.as_str());
+          json_to_writer(&json, &mut std::io::stdout()).expect_exit(message_error.as_str());
           writeln!(std::io::stdout(), "").expect_exit(message_error.as_str());
         }
       }

@@ -182,7 +182,7 @@ impl GeoJsonUtils for JsonValue {
 #[cfg(test)]
 mod test_geojson {
   use super::*;
-  use json::{array};
+  use json::array;
 
   #[test]
   pub fn point() {

@@ -1,4 +1,4 @@
-use crate::ser::{DefaultGenerator, Generator, WOFGenerator};
+use crate::ser::{object_to_writer, object_to_writer_pretty};
 use crate::std::StringifyError;
 use crate::utils::JsonUtils;
 pub use json::object::Object;
@@ -112,11 +112,11 @@ impl<'a> WOFGeoJSON<'a> {
   }
 
   pub fn pretty(&self, mut writer: &mut dyn Write) -> Result<(), std::io::Error> {
-    WOFGenerator::new(&mut writer).write_object(self.json)
+    object_to_writer_pretty(self.json, &mut writer)
   }
 
   pub fn dump(&self, mut writer: &mut dyn Write) -> Result<(), std::io::Error> {
-    DefaultGenerator::new(&mut writer).write_object(self.json)
+    object_to_writer(self.json, &mut writer)
   }
 
   fn is_property_deprecated(&self, prop: &'static str) -> bool {

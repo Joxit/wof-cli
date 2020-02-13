@@ -2,7 +2,7 @@
 use crate::std::StringifyError;
 use crate::wof::WOFGeoJSON;
 use rusqlite::{params, Connection, Error as SQLiteError};
-use std::path::{Path};
+use std::path::Path;
 mod statements;
 
 /// SQLite structure, own a connection to the database with options.
@@ -32,8 +32,7 @@ pub struct SQLiteOpts {
 }
 
 impl SQLite {
-
-    /// Create a connection to a database, the parent folder should exists.
+  /// Create a connection to a database, the parent folder should exists.
   pub fn new<P: AsRef<Path>>(path: P, opts: SQLiteOpts) -> Result<Self, String> {
     Ok(SQLite {
       conn: Connection::open(path).stringify_err("connection to database")?,
@@ -41,7 +40,7 @@ impl SQLite {
     })
   }
 
-/// Create all tables, indexes and configure the database.
+  /// Create all tables, indexes and configure the database.
   pub fn create_tables(&self) -> Result<(), String> {
     self
       .conn
@@ -90,22 +89,22 @@ impl SQLite {
     Ok(())
   }
 
-/// Add a file to the database, the file must be a WOF GeoJSON.
+  /// Add a file to the database, the file must be a WOF GeoJSON.
   pub fn add_file<P: AsRef<Path>>(&self, path: P) -> Result<(), String> {
     let json = WOFGeoJSON::parse_file_to_json(path.as_ref().to_path_buf())?;
     let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
     self.add(geojson)
   }
 
-/// Add the string content to the database, it must be a WOF GeoJSON.
+  /// Add the string content to the database, it must be a WOF GeoJSON.
   pub fn add_string(&self, buf: String) -> Result<(), String> {
     let json = WOFGeoJSON::parse_string_to_json(buf)?;
     let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
     self.add(geojson)
   }
 
-/// Add a WOFGeoJSON document to the database.
-/// The `SQLiteOpts` is used here and it will define in which table the document should be added.
+  /// Add a WOFGeoJSON document to the database.
+  /// The `SQLiteOpts` is used here and it will define in which table the document should be added.
   pub fn add(&self, document: WOFGeoJSON) -> Result<(), String> {
     if !self.opts.deprecated && document.is_doc_deprecated() {
       return Ok(());

@@ -1,9 +1,8 @@
 #[macro_use]
 extern crate json;
 
-use json::codegen::Generator;
 use json::Null;
-use wof::ser::WOFGenerator;
+use wof::ser::json_to_writer_pretty;
 
 #[test]
 pub fn serialize_first_level_wof_geojson_with_null() {
@@ -15,7 +14,7 @@ pub fn serialize_first_level_wof_geojson_with_null() {
     "id"=> Null,
   };
   let mut vec: Vec<u8> = Vec::new();
-  assert!(WOFGenerator::new(&mut vec).write_json(&t).is_ok());
+  assert!(json_to_writer_pretty(&t, &mut vec).is_ok());
   assert_eq!(
     String::from_utf8(vec).unwrap(),
     r#"{
@@ -63,7 +62,7 @@ pub fn serialize_first_level_wof_geojson_with_content() {
     "id"=> 101748927,
   };
   let mut vec: Vec<u8> = Vec::new();
-  assert!(WOFGenerator::new(&mut vec).write_json(&t).is_ok());
+  assert!(json_to_writer_pretty(&t, &mut vec).is_ok());
   assert_eq!(
     String::from_utf8(vec).unwrap(),
     r#"{

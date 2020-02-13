@@ -1,9 +1,10 @@
-pub use json::codegen::{Generator, WriterGenerator as DefaultGenerator};
+//! Serialize a JSON with the pretty WOF style or single line JSON.
+use json::codegen::{Generator, WriterGenerator};
 use json::object::Object;
 use json::JsonValue;
-use std::io::{self, Write};
+use std::io::{self, Result, Write};
 
-pub struct WOFGenerator<'a, W> {
+struct WOFGenerator<'a, W> {
   writer: &'a mut W,
   dent: u16,
 }
@@ -150,4 +151,24 @@ fn wof_first_level_ordering(
   } else {
     k1.partial_cmp(k2).unwrap()
   }
+}
+
+/// Serialize a [`JsonValue`](../../json/value/enum.JsonValue.html) as a JSON into the IO stream.
+pub fn json_to_writer<W: Write>(json: &JsonValue, mut writer: &mut W) -> Result<()> {
+  WriterGenerator::new(&mut writer).write_json(&json)
+}
+
+/// Serialize an [`Object`](../../json/object/struct.Object.html) as a JSON into the IO stream.
+pub fn object_to_writer<W: Write>(object: &Object, mut writer: &mut W) -> Result<()> {
+  WriterGenerator::new(&mut writer).write_object(&object)
+}
+
+/// Serialize a [`JsonValue`](../../json/value/enum.JsonValue.html) as a pretty-printed JSON into the IO stream.
+pub fn json_to_writer_pretty<W: Write>(json: &JsonValue, mut writer: &mut W) -> Result<()> {
+  WOFGenerator::new(&mut writer).write_json(&json)
+}
+
+/// Serialize an [`Object`](../../json/object/struct.Object.html) as a pretty-printed JSON into the IO stream.
+pub fn object_to_writer_pretty<W: Write>(object: &Object, mut writer: &mut W) -> Result<()> {
+  WOFGenerator::new(&mut writer).write_object(&object)
 }
