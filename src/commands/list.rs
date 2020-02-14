@@ -1,5 +1,5 @@
+use crate::repo::Walk;
 use crate::utils::ResultExit;
-use crate::walk::Walk;
 use std::io::Write;
 use structopt::StructOpt;
 

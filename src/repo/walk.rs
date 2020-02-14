@@ -1,9 +1,10 @@
 use crate::wof::WOFGeoJSON;
 use regex::Regex;
 use std::io::Result;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use walkdir::{DirEntry, IntoIter, WalkDir};
 
+/// Walk through a WOF directory and iterate over all GeoJSONs using the powerful [`walkdir`](https://crates.io/crates/walkdir) crate.
 pub struct Walk {
   walker: IntoIter,
   geojson_regex: Regex,
@@ -23,9 +24,9 @@ impl Walk {
     }
   }
 
-  fn should_skip(&self, path: PathBuf) -> std::result::Result<bool, String> {
+  fn should_skip<P: AsRef<Path>>(&self, path: P) -> std::result::Result<bool, String> {
     if !self.with_deprecated {
-      let json = WOFGeoJSON::parse_file_to_json(path.to_path_buf())?;
+      let json = WOFGeoJSON::parse_file_to_json(path.as_ref().to_path_buf())?;
       let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
       if geojson.is_doc_deprecated() {
         return Ok(true);
@@ -52,7 +53,7 @@ impl Iterator for Walk {
               continue;
             };
             if is_geojson && (self.with_alt || !is_altname) {
-              if !self.should_skip(path.path().to_path_buf()).unwrap_or(true) {
+              if !self.should_skip(path.path()).unwrap_or(true) {
                 return Some(Ok(path));
               }
             }

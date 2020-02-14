@@ -1,7 +1,7 @@
 use crate::commands::assert_directory_exists;
+use crate::repo::Walk;
 use crate::sqlite;
 use crate::utils::ResultExit;
-use crate::walk::Walk;
 use log::{error, info};
 use std::path::Path;
 use structopt::StructOpt;

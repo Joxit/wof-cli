@@ -3,11 +3,11 @@ use structopt::StructOpt;
 
 mod commands;
 mod git;
+mod repo;
 pub mod ser;
 mod sqlite;
 mod std;
 pub mod utils;
-mod walk;
 mod wof;
 
 #[derive(Debug, StructOpt)]
