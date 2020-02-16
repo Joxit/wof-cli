@@ -1,5 +1,6 @@
 use crate::{JsonObject, JsonValue};
 
+/// Trait for JsonValue, it adds some useful features.
 pub trait JsonUtils {
   fn as_json_value(&self) -> &JsonValue;
   fn as_mut_json_value(&mut self) -> &mut JsonValue;
@@ -92,6 +93,7 @@ impl JsonUtils for JsonValue {
   }
 }
 
+/// Trait for JsonValue, it adds some useful features when the JsonValue contains GeoJSON coordinates.
 pub trait GeoJsonUtils {
   fn as_json_value(&self) -> &JsonValue;
   fn as_mut_json_value(&mut self) -> &mut JsonValue;

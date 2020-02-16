@@ -1,3 +1,27 @@
+//! Utilities for the WOF ecosystem.
+//!
+//! A WOF repository looks like this:
+//!```text
+//!|-- data
+//!|   |-- 101
+//!|   |   |-- 748
+//!|   |   |   |-- 927
+//!|   |   |   |   |-- 101748927-alt-quattroshapes_pg.geojson
+//!|   |   |   |   `-- 101748927.geojson
+//!|   |   |   |-- 929
+//!|   |   |   |   `-- 101748929.geojson
+//!...
+//!```
+//! The document with the id 101748927 will be in the folder data/101/748/927, here are some functions to work with this tree.
+//!```rust
+//! use wof::utils::*;
+//! use std::path::Path;
+//! assert_eq!(id_to_path_folder(890442055).as_path(), Path::new("890/442/055"));
+//! assert_eq!(id_to_path_geojson(890442055).as_path(), Path::new("890/442/055/890442055.geojson"));
+//! assert_eq!(id_to_data_path_folder(890442055).as_path(), Path::new("data/890/442/055"));
+//! assert_eq!(id_to_data_path_geojson(890442055).as_path(), Path::new("data/890/442/055/890442055.geojson"));
+//!```
+
 mod json;
 #[cfg(feature = "cli")]
 pub mod logger;
@@ -11,6 +35,7 @@ pub use crate::utils::path::{
 #[cfg(feature = "cli")]
 pub use crate::utils::result_exit::ResultExit;
 
+/// List of all available country codes for WOF repositories.
 pub fn get_available_country_codes() -> Vec<String> {
   vec![
     "ad", "ae", "af", "ag", "ai", "al", "am", "an", "ao", "aq", "ar", "as", "at", "au", "aw", "ax",
@@ -36,6 +61,7 @@ pub fn get_available_country_codes() -> Vec<String> {
   .collect()
 }
 
+/// List of all US codes for WOF venues repositories.
 pub fn get_available_us_venues_codes() -> Vec<String> {
   vec![
     "us-ak", "us-al", "us-ar", "us-az", "us-ca", "us-co", "us-ct", "us-dc", "us-de", "us-fl",

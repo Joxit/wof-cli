@@ -1,5 +1,11 @@
 use std::path::{Path, PathBuf};
 
+/// Returns the WOF path folder from an id.
+/// ```rust
+/// use wof::utils::*;
+/// use std::path::Path;
+/// assert_eq!(id_to_path_folder(890442055).as_path(), Path::new("890/442/055"));
+/// ```
 pub fn id_to_path_folder<T: ToString>(id: T) -> PathBuf {
   let id = id.to_string();
   let mut path = Path::new("").to_path_buf();
@@ -16,6 +22,36 @@ pub fn id_to_path_folder<T: ToString>(id: T) -> PathBuf {
     path = path.join(s);
   }
   path
+}
+
+/// Returns the WOF path geojson from an id.
+/// ```rust
+/// use wof::utils::*;
+/// use std::path::Path;
+/// assert_eq!(id_to_path_geojson(890442055).as_path(), Path::new("890/442/055/890442055.geojson"));
+/// ```
+pub fn id_to_path_geojson<T: ToString>(id: T) -> PathBuf {
+  id_to_path_folder(id.to_string()).join(format!("{}.geojson", id.to_string()))
+}
+
+/// Returns the WOF data path folder from an id.
+/// ```rust
+/// use wof::utils::*;
+/// use std::path::Path;
+/// assert_eq!(id_to_data_path_folder(890442055).as_path(), Path::new("data/890/442/055"));
+/// ```
+pub fn id_to_data_path_folder<T: ToString>(id: T) -> PathBuf {
+  Path::new("data").join(id_to_path_folder(id))
+}
+
+/// Returns the WOF data path geojson from an id.
+/// ```rust
+/// use wof::utils::*;
+/// use std::path::Path;
+/// assert_eq!(id_to_data_path_geojson(890442055).as_path(), Path::new("data/890/442/055/890442055.geojson"));
+/// ```
+pub fn id_to_data_path_geojson<T: ToString>(id: T) -> PathBuf {
+  Path::new("data").join(id_to_path_geojson(id))
 }
 
 #[cfg(test)]
@@ -87,10 +123,6 @@ mod test_id_to_path_folder {
       Path::new("102/047/343").to_path_buf()
     );
   }
-}
-
-pub fn id_to_path_geojson<T: ToString>(id: T) -> PathBuf {
-  id_to_path_folder(id.to_string()).join(format!("{}.geojson", id.to_string()))
 }
 
 #[cfg(test)]
@@ -170,10 +202,6 @@ mod test_id_to_path_geojson {
   }
 }
 
-pub fn id_to_data_path_folder<T: ToString>(id: T) -> PathBuf {
-  Path::new("data").join(id_to_path_folder(id))
-}
-
 #[cfg(test)]
 mod test_id_to_data_path_folder {
   use super::*;
@@ -246,10 +274,6 @@ mod test_id_to_data_path_folder {
       Path::new("data/102/047/343").to_path_buf()
     );
   }
-}
-
-pub fn id_to_data_path_geojson<T: ToString>(id: T) -> PathBuf {
-  Path::new("data").join(id_to_path_geojson(id))
 }
 
 #[cfg(test)]

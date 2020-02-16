@@ -9,7 +9,7 @@ use crate::std::StringifyError;
 use crate::utils::ResultExit;
 use flate2::read::GzDecoder;
 use regex::Regex;
-use std::path::PathBuf;
+use std::path::Path;
 use std::result::Result;
 use structopt::StructOpt;
 use tar::Archive;
@@ -123,7 +123,8 @@ impl Command {
   }
 }
 
-pub fn assert_directory_exists(path: &PathBuf) {
+pub fn assert_directory_exists<P: AsRef<Path>>(path: P) {
+  let path = path.as_ref();
   if !path.exists() {
     if let Err(e) = std::fs::create_dir_all(&path) {
       eprintln!(
@@ -142,11 +143,12 @@ pub fn assert_directory_exists(path: &PathBuf) {
   }
 }
 
-pub fn download_tar_gz_strip(
+pub fn download_tar_gz_strip<P: AsRef<Path>>(
   url: String,
-  dest: PathBuf,
+  dest: P,
   strip_components: u32,
 ) -> Result<(), String> {
+  let dest = dest.as_ref();
   assert_directory_exists(&dest);
 
   let (status, _, read) = attohttpc::get(url)
