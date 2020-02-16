@@ -192,7 +192,7 @@ pub fn download_tar_gz_strip(
 }
 
 pub fn download_tar_gz_stream_geojson(url: String) -> Result<(), String> {
-  use crate::wof::{JsonValue, WOFGeoJSON};
+  use crate::{JsonValue, WOFGeoJSON};
   use std::ffi::OsStr;
   use std::io::{Read, Write};
   let (status, _, read) = attohttpc::get(url)

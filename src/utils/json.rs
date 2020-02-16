@@ -1,5 +1,4 @@
-pub use json::object::Object;
-pub use json::JsonValue;
+use crate::{JsonObject, JsonValue};
 
 pub trait JsonUtils {
   fn as_json_value(&self) -> &JsonValue;
@@ -41,13 +40,13 @@ pub trait JsonUtils {
       )),
     }
   }
-  fn as_object(&self) -> Option<&Object> {
+  fn as_object(&self) -> Option<&JsonObject> {
     match &self.as_json_value() {
       JsonValue::Object(ref obj) => Some(obj),
       _ => None,
     }
   }
-  fn as_mut_object(&mut self) -> Option<&mut Object> {
+  fn as_mut_object(&mut self) -> Option<&mut JsonObject> {
     match self.as_mut_json_value() {
       JsonValue::Object(ref mut obj) => Some(obj),
       _ => None,

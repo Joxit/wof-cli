@@ -1,7 +1,6 @@
 //! Serialize a JSON with the pretty WOF style or single line JSON.
+use crate::{JsonObject, JsonValue};
 use json::codegen::{Generator, WriterGenerator};
-use json::object::Object;
-use json::JsonValue;
 use std::io::{self, Result, Write};
 
 struct WOFGenerator<'a, W> {
@@ -76,7 +75,7 @@ where
   }
 
   #[inline(always)]
-  fn write_object(&mut self, object: &Object) -> io::Result<()> {
+  fn write_object(&mut self, object: &JsonObject) -> io::Result<()> {
     self.write_char(b'{')?;
     let mut entries: Vec<(&str, &JsonValue)> = Vec::new();
     for (k, v) in object.iter() {
@@ -154,21 +153,37 @@ fn wof_first_level_ordering(
 }
 
 /// Serialize a [`JsonValue`](../../json/value/enum.JsonValue.html) as a JSON into the IO stream.
+#[inline]
 pub fn json_to_writer<W: Write>(json: &JsonValue, mut writer: &mut W) -> Result<()> {
   WriterGenerator::new(&mut writer).write_json(&json)
 }
 
 /// Serialize an [`Object`](../../json/object/struct.Object.html) as a JSON into the IO stream.
-pub fn object_to_writer<W: Write>(object: &Object, mut writer: &mut W) -> Result<()> {
+#[inline]
+pub fn object_to_writer<W: Write>(object: &JsonObject, mut writer: &mut W) -> Result<()> {
   WriterGenerator::new(&mut writer).write_object(&object)
 }
 
-/// Serialize a [`JsonValue`](../../json/value/enum.JsonValue.html) as a pretty-printed JSON into the IO stream.
+/// Serialize a [`WOFGeoJSON`](../struct.WOFGeoJSON.html) as a JSON into the IO stream.
+#[inline]
+pub fn wof_to_writer<W: Write>(wof: &crate::wof::WOFGeoJSON, writer: &mut W) -> Result<()> {
+  wof.dump(writer)
+}
+
+/// Serialize a [`JsonValue`](../../json/value/enum.JsonValue.html) as a WOF pretty-printed JSON into the IO stream.
+#[inline]
 pub fn json_to_writer_pretty<W: Write>(json: &JsonValue, mut writer: &mut W) -> Result<()> {
   WOFGenerator::new(&mut writer).write_json(&json)
 }
 
-/// Serialize an [`Object`](../../json/object/struct.Object.html) as a pretty-printed JSON into the IO stream.
-pub fn object_to_writer_pretty<W: Write>(object: &Object, mut writer: &mut W) -> Result<()> {
+/// Serialize an [`Object`](../../json/object/struct.Object.html) as a WOF pretty-printed JSON into the IO stream.
+#[inline]
+pub fn object_to_writer_pretty<W: Write>(object: &JsonObject, mut writer: &mut W) -> Result<()> {
   WOFGenerator::new(&mut writer).write_object(&object)
+}
+
+/// Serialize a [`WOFGeoJSON`](../struct.WOFGeoJSON.html) as a WOF pretty-printed JSON into the IO stream.
+#[inline]
+pub fn wof_to_writer_pretty<W: Write>(wof: &crate::wof::WOFGeoJSON, writer: &mut W) -> Result<()> {
+  wof.pretty(writer)
 }

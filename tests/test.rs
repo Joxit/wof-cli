@@ -2,7 +2,7 @@
 extern crate json;
 
 use json::Null;
-use wof::ser::json_to_writer_pretty;
+use wof::json_to_writer_pretty;
 
 #[test]
 pub fn serialize_first_level_wof_geojson_with_null() {

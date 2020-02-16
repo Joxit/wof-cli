@@ -1,7 +1,6 @@
 use crate::ser::{json_to_writer, json_to_writer_pretty};
 use crate::utils::ResultExit;
 use crate::utils::{self, JsonUtils};
-use json;
 use log::error;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -64,7 +63,7 @@ impl Print {
         file
           .read_to_string(&mut buffer)
           .expect_exit(message_error.as_str());
-        let mut json = json::parse(&mut buffer).expect_exit(message_error.as_str());
+        let mut json = crate::parse_string_to_json(buffer).expect_exit(message_error.as_str());
         let obj = json.as_mut_object().expect_exit(message_error.as_str());
         if self.no_geom {
           obj.remove("geometry");

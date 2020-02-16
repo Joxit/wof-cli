@@ -4,11 +4,17 @@ use structopt::StructOpt;
 mod commands;
 mod git;
 mod repo;
-pub mod ser;
+mod ser;
+pub use self::ser::*;
+mod de;
+pub use self::de::*;
 mod sqlite;
 mod std;
 pub mod utils;
 mod wof;
+pub use self::wof::WOFGeoJSON;
+pub use json::object::Object as JsonObject;
+pub use json::JsonValue;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "wof", author, about)]

@@ -91,14 +91,14 @@ impl SQLite {
 
   /// Add a file to the database, the file must be a WOF GeoJSON.
   pub fn add_file<P: AsRef<Path>>(&self, path: P) -> Result<(), String> {
-    let json = WOFGeoJSON::parse_file_to_json(path.as_ref().to_path_buf())?;
+    let json = crate::parse_file_to_json(path.as_ref().to_path_buf())?;
     let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
     self.add(geojson)
   }
 
   /// Add the string content to the database, it must be a WOF GeoJSON.
   pub fn add_string(&self, buf: String) -> Result<(), String> {
-    let json = WOFGeoJSON::parse_string_to_json(buf)?;
+    let json = crate::parse_string_to_json(buf)?;
     let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
     self.add(geojson)
   }

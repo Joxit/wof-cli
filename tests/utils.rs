@@ -1,7 +1,9 @@
 #[macro_use]
 extern crate json;
 use std::path::Path;
-use wof::utils::{self, JsonObject, JsonUtils};
+use wof::utils::{self, JsonUtils};
+use wof::JsonObject;
+
 #[test]
 fn json_utils_accessibility() {
   assert_eq!(object! {}.assert_is_object(), Ok(()));

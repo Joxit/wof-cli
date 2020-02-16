@@ -1,20 +1,23 @@
-use crate::ser::{object_to_writer, object_to_writer_pretty};
 use crate::std::StringifyError;
 use crate::utils::JsonUtils;
-pub use json::object::Object;
-pub use json::{self, JsonValue};
+use crate::{object_to_writer, object_to_writer_pretty, JsonObject, JsonValue};
 use regex::Regex;
-use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::io::Write;
 
+/// Representation of a WOF GeoJSON, contains all required properties.
 #[derive(Debug, Clone)]
 pub struct WOFGeoJSON<'a> {
-  json: &'a Object,
+  json: &'a JsonObject,
+  /// This is the id of the document.
   pub id: i32,
+  /// This is the type of the document, should be `Feature`.
   pub r#type: String,
-  pub properties: &'a Object,
+  /// All properties of the document, contains names, hierarchy...
+  pub properties: &'a JsonObject,
+  /// The BBox of the document.
   pub bbox: Vec<f64>,
-  pub geometry: &'a Object,
+  /// The raw Geometry, it's an inner GeoJSON. Types are `Point`, `MultiPoint`, `LineString`, `MultiLineString`, `Polygon` and `MultiPolygon`.
+  pub geometry: &'a JsonObject,
 }
 
 #[derive(Debug, Clone)]
@@ -26,39 +29,6 @@ pub struct WofName<'a> {
 }
 
 impl<'a> WOFGeoJSON<'a> {
-  pub fn parse_file_to_string(path: PathBuf) -> Result<String, String> {
-    if !path.exists() {
-      return Err(format!("File {} does not exists", path.as_path().display()));
-    }
-
-    let mut file = match std::fs::File::open(path) {
-      Ok(file) => file,
-      Err(e) => return Err(format!("{}", e)),
-    };
-
-    let mut buffer = String::new();
-    if let Err(e) = file.read_to_string(&mut buffer) {
-      return Err(format!("{}", e));
-    };
-
-    Ok(buffer)
-  }
-
-  pub fn parse_file_to_json(path: PathBuf) -> Result<JsonValue, String> {
-    let buffer = WOFGeoJSON::parse_file_to_string(path)?;
-    match json::parse(&buffer) {
-      Ok(json) => Ok(json),
-      Err(e) => return Err(format!("{}", e)),
-    }
-  }
-
-  pub fn parse_string_to_json(buffer: String) -> Result<JsonValue, String> {
-    match json::parse(&buffer) {
-      Ok(json) => Ok(json),
-      Err(e) => return Err(format!("{}", e)),
-    }
-  }
-
   pub fn as_valid_wof_geojson(json: &'a JsonValue) -> Result<Self, String> {
     json.assert_is_object()?;
     let json = json.as_object().unwrap();
