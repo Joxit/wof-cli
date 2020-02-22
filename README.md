@@ -2,7 +2,13 @@
 
 ![Rust](https://github.com/Joxit/wof-cli/workflows/Rust/badge.svg)
 
-This project is both a CLI and a library to work with WOF documents in Rust.
+This project is both a CLI and a library to work with [Who's On First](https://www.whosonfirst.org/) documents in Rust.
+
+If you want the CLI, install it with [cargo](https://doc.rust-lang.org/cargo/):
+
+```bash
+cargo install wof --force --features cli
+```
 
 ## CLI
 
@@ -33,7 +39,7 @@ SUBCOMMANDS:
 
 ### Build
 
-You can build SQLite database or ESRI Shapefile. 
+You can build SQLite database or ESRI Shapefile.
 
 ```
 wof-build 0.1.0

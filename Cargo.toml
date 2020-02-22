@@ -1,12 +1,16 @@
 [package]
 name = "wof"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Jones Magloire @Joxit"]
 description = "The Who's On First rust library and command line."
 edition = "2018"
 license = "MIT"
 autobins = false
 repository = "https://github.com/Joxit/wof-cli"
+homepage = "https://github.com/Joxit/wof-cli"
+documentation = "https://docs.rs/wof/"
+readme = "README.md"
+categories = ["cli"]
 
 [[bin]]
 name = "wof"
