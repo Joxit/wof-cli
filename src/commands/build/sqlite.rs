@@ -4,6 +4,7 @@ use crate::sqlite;
 use crate::utils::ResultExit;
 use log::{error, info};
 use std::path::Path;
+use std::time::SystemTime;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -34,7 +35,7 @@ pub struct SQLite {
 impl SQLite {
   pub fn exec(&self) {
     let out_path = Path::new(&self.out).to_path_buf();
-    crate::utils::logger::set_verbose(self.verbose, "wof::build::sqlite")
+    crate::utils::logger::set_verbose(self.verbose || self.timings, "wof::build::sqlite")
       .expect_exit("Can't init logger.");
     let parent = out_path
       .parent()
@@ -50,7 +51,7 @@ impl SQLite {
       false
     };
 
-    info!("Will create database: `{}`", out_path.as_path().display());
+    info!("Creating database: `{}`", out_path.as_path().display());
     let sqlite = sqlite::SQLite::new(
       out_path,
       sqlite::SQLiteOpts {
@@ -64,8 +65,10 @@ impl SQLite {
     )
     .expect_exit("Can't open the database");
 
-    info!("Will create tables.");
+    info!("Creating tables and indexes.");
     sqlite.create_tables().expect_exit("Can't create tables");
+
+    let import_start = SystemTime::now();
 
     if crate::commands::input_pipe() {
       info!("Start import from stdin.");
@@ -83,7 +86,8 @@ impl SQLite {
       }
     } else {
       for directory in &self.directories {
-        info!("Start import for stdin `{}`", directory);
+        info!("Start import for directory `{}`", directory);
+        let start = SystemTime::now();
         for entry in Walk::new(directory.to_string(), false, true) {
           if let Ok(path) = entry {
             if let Err(e) = sqlite.add_file(path.path()) {
@@ -91,8 +95,23 @@ impl SQLite {
             }
           }
         }
+        if self.timings {
+          info!(
+            "Import for `{}` took {:?}.",
+            directory,
+            start.elapsed().unwrap()
+          );
+        }
       }
     }
-    info!("Import finished successfully.");
+
+    if self.timings {
+      info!(
+        "Import finished successfully in {:?}.",
+        import_start.elapsed().unwrap()
+      );
+    } else {
+      info!("Import finished successfully.");
+    }
   }
 }
