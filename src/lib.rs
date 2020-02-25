@@ -30,3 +30,4 @@ pub use self::wof::WOFGeoJSON;
 pub use json::object::Object as JsonObject;
 pub use json::JsonValue;
 pub mod repo;
+pub mod shapefile;
