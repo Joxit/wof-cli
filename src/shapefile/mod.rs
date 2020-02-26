@@ -52,6 +52,14 @@ impl Shapefile {
       _ => return Err("Can't get coordinates from the GeoJSON".to_string()),
     };
     match geom_type {
+      Some("Point") => {
+        if self.opts.shapetype != ShapeType::Point {
+          return Ok(());
+        }
+        if let Some(polygon) = coords.as_geom_point() {
+          self.points.push(coords_to_point(polygon));
+        }
+      }
       Some("Polygon") => {
         if self.opts.shapetype != ShapeType::Polygon {
           return Ok(());
@@ -68,11 +76,24 @@ impl Shapefile {
 
   pub fn write(mut self) -> Result<(), String> {
     match self.opts.shapetype {
-      ShapeType::Point => self.writer.write_shapes(self.points).stringify_err("Something goes wrong when adding points to the shapefile"),
-      ShapeType::Polyline => self.writer.write_shapes(self.polylines).stringify_err("Something goes wrong when adding polylines to the shapefile"),
-      ShapeType::Polygon => self.writer.write_shapes(self.polygons).stringify_err("Something goes wrong when adding polygons to the shapefile"),
+      ShapeType::Point => self
+        .writer
+        .write_shapes(self.points)
+        .stringify_err("Something goes wrong when adding points to the shapefile"),
+      ShapeType::Polyline => self
+        .writer
+        .write_shapes(self.polylines)
+        .stringify_err("Something goes wrong when adding polylines to the shapefile"),
+      ShapeType::Polygon => self
+        .writer
+        .write_shapes(self.polygons)
+        .stringify_err("Something goes wrong when adding polygons to the shapefile"),
     }
   }
+}
+
+pub fn coords_to_point(point: Vec<f64>) -> Point {
+  Point::new(point[0], point[1])
 }
 
 pub fn coords_to_polygon(polygon: Vec<Vec<Vec<f64>>>) -> Polygon {
@@ -80,7 +101,7 @@ pub fn coords_to_polygon(polygon: Vec<Vec<Vec<f64>>>) -> Polygon {
   for polyline in polygon {
     let mut part: Vec<Point> = vec![];
     for point in polyline {
-      part.push(Point::new(point[0], point[1]));
+      part.push(coords_to_point(point));
     }
     parts.push(part);
   }

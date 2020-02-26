@@ -1,6 +1,8 @@
 # wof
 
-![Rust](https://github.com/Joxit/wof-cli/workflows/Rust/badge.svg)
+[![Rust](https://github.com/Joxit/wof-cli/workflows/Rust/badge.svg)](https://github.com/Joxit/wof-cli/actions?query=workflow%3ARust)
+[![Crates.io version shield](https://img.shields.io/crates/v/wof.svg)](https://crates.io/crates/wof)
+[![Crates.io license shield](https://img.shields.io/crates/l/wof.svg)](https://crates.io/crates/wof)
 
 This project is both a CLI and a library to work with [Who's On First](https://www.whosonfirst.org/) documents in Rust.
 
