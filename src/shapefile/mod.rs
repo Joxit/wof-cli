@@ -56,8 +56,8 @@ impl Shapefile {
         if self.opts.shapetype != ShapeType::Point {
           return Ok(());
         }
-        if let Some(polygon) = coords.as_geom_point() {
-          self.points.push(coords_to_point(polygon));
+        if let Some(point) = coords.as_geom_point() {
+          self.points.push(coords_to_point(&point));
         }
       }
       Some("Polygon") => {
@@ -92,17 +92,34 @@ impl Shapefile {
   }
 }
 
-pub fn coords_to_point(point: Vec<f64>) -> Point {
+pub fn coords_to_point(point: &Vec<f64>) -> Point {
   Point::new(point[0], point[1])
+}
+
+pub fn coords_to_points(line: &Vec<Vec<f64>>) -> Vec<Point> {
+  let mut points = vec![];
+  for point in line {
+    points.push(coords_to_point(point));
+  }
+  points
+}
+
+pub fn coords_to_rev_points(line: &Vec<Vec<f64>>) -> Vec<Point> {
+  let mut points = vec![];
+  for point in line.iter().rev() {
+    points.push(coords_to_point(point));
+  }
+  points
 }
 
 pub fn coords_to_polygon(polygon: Vec<Vec<Vec<f64>>>) -> Polygon {
   let mut parts: Vec<Vec<Point>> = vec![];
-  for polyline in polygon {
-    let mut part: Vec<Point> = vec![];
-    for point in polyline {
-      part.push(coords_to_point(point));
-    }
+  for (pos, polyline) in polygon.iter().enumerate() {
+    let part: Vec<Point> = if pos == 0 {
+      coords_to_points(polyline) // Outer
+    } else {
+      coords_to_rev_points(polyline) // Inner
+    };
     parts.push(part);
   }
   Polygon::with_parts(parts)
