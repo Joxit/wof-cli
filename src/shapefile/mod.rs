@@ -68,6 +68,14 @@ impl Shapefile {
           self.polygons.push(coords_to_polygon(polygon));
         }
       }
+      Some("MultiPolygon") => {
+        if self.opts.shapetype != ShapeType::Polygon {
+          return Ok(());
+        }
+        if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
+          self.polygons.push(coords_to_multi_polygon(multi_polygon));
+        }
+      }
       Some(s) => return Err(format!("Not implemented for {}", s)),
       None => {}
     }
@@ -121,6 +129,21 @@ pub fn coords_to_polygon(polygon: Vec<Vec<Vec<f64>>>) -> Polygon {
       coords_to_rev_points(polyline) // Inner
     };
     parts.push(part);
+  }
+  Polygon::with_parts(parts)
+}
+
+pub fn coords_to_multi_polygon(multi_polygon: Vec<Vec<Vec<Vec<f64>>>>) -> Polygon {
+  let mut parts: Vec<Vec<Point>> = vec![];
+  for polygon in multi_polygon {
+    for (pos, polyline) in polygon.iter().enumerate() {
+      let part: Vec<Point> = if pos == 0 {
+        coords_to_points(polyline) // Outer
+      } else {
+        coords_to_rev_points(polyline) // Inner
+      };
+      parts.push(part);
+    }
   }
   Polygon::with_parts(parts)
 }
