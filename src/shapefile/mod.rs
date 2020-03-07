@@ -12,7 +12,7 @@ pub struct Shapefile {
   opts: ShapefileOpts,
   polygons: Vec<Polygon>,
   points: Vec<Point>,
-  polylines: Vec<Point>,
+  polylines: Vec<Polyline>,
 }
 
 /// Options for the database, default values are the official configuration.
@@ -58,6 +58,14 @@ impl Shapefile {
         }
         if let Some(point) = coords.as_geom_point() {
           self.points.push(coords_to_point(&point));
+        }
+      }
+      Some("LineString") => {
+        if self.opts.shapetype != ShapeType::Polyline {
+          return Ok(());
+        }
+        if let Some(polyline) = coords.as_geom_line() {
+          self.polylines.push(coords_to_polyline(polyline));
         }
       }
       Some("Polygon") => {
@@ -118,6 +126,10 @@ pub fn coords_to_rev_points(line: &Vec<Vec<f64>>) -> Vec<Point> {
     points.push(coords_to_point(point));
   }
   points
+}
+
+pub fn coords_to_polyline(polyline: Vec<Vec<f64>>) -> Polyline {
+  Polyline::new(coords_to_points(&polyline))
 }
 
 pub fn coords_to_polygon(polygon: Vec<Vec<Vec<f64>>>) -> Polygon {
