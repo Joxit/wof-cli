@@ -68,6 +68,14 @@ impl Shapefile {
           self.polylines.push(coords_to_polyline(polyline));
         }
       }
+      Some("MultiLineString") => {
+        if self.opts.shapetype != ShapeType::Polyline {
+          return Ok(());
+        }
+        if let Some(polyline) = coords.as_geom_multi_line() {
+          self.polylines.push(coords_to_multi_polyline(polyline));
+        }
+      }
       Some("Polygon") => {
         if self.opts.shapetype != ShapeType::Polygon {
           return Ok(());
@@ -130,6 +138,14 @@ pub fn coords_to_rev_points(line: &Vec<Vec<f64>>) -> Vec<Point> {
 
 pub fn coords_to_polyline(polyline: Vec<Vec<f64>>) -> Polyline {
   Polyline::new(coords_to_points(&polyline))
+}
+
+pub fn coords_to_multi_polyline(polylines: Vec<Vec<Vec<f64>>>) -> Polyline {
+  let mut parts: Vec<Vec<Point>> = vec![];
+  for polyline in polylines {
+    parts.push(coords_to_points(&polyline));
+  }
+  Polyline::with_parts(parts)
 }
 
 pub fn coords_to_polygon(polygon: Vec<Vec<Vec<f64>>>) -> Polygon {
