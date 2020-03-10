@@ -175,3 +175,31 @@ pub fn coords_to_multi_polygon(multi_polygon: Vec<Vec<Vec<Vec<f64>>>>) -> Polygo
   }
   Polygon::with_parts(parts)
 }
+
+#[cfg(test)]
+mod test_shapefile {
+  use super::*;
+
+  #[test]
+  pub fn test_coords_to_point() {
+    assert_eq!(coords_to_point(&vec![10., 20.]), Point::new(10., 20.));
+    assert_eq!(coords_to_point(&vec![-10., 20.]), Point::new(-10., 20.));
+    assert_eq!(coords_to_point(&vec![10., -20.]), Point::new(10., -20.));
+  }
+
+  #[test]
+  pub fn test_coords_to_points() {
+    assert_eq!(
+      coords_to_points(&vec![vec![10., 20.]]),
+      vec![Point::new(10., 20.)]
+    );
+    assert_eq!(
+      coords_to_points(&vec![vec![-10., 20.]]),
+      vec![Point::new(-10., 20.)]
+    );
+    assert_eq!(
+      coords_to_points(&vec![vec![10., -20.]]),
+      vec![Point::new(10., -20.)]
+    );
+  }
+}
