@@ -65,7 +65,7 @@ impl Shapefile {
           return Ok(());
         }
         if let Some(polyline) = coords.as_geom_line() {
-          self.polylines.push(coords_to_polyline(polyline));
+          self.polylines.push(coords_to_polyline(&polyline));
         }
       }
       Some("MultiLineString") => {
@@ -73,7 +73,7 @@ impl Shapefile {
           return Ok(());
         }
         if let Some(polyline) = coords.as_geom_multi_line() {
-          self.polylines.push(coords_to_multi_polyline(polyline));
+          self.polylines.push(coords_to_multi_polyline(&polyline));
         }
       }
       Some("Polygon") => {
@@ -81,7 +81,7 @@ impl Shapefile {
           return Ok(());
         }
         if let Some(polygon) = coords.as_geom_polygon() {
-          self.polygons.push(coords_to_polygon(polygon));
+          self.polygons.push(coords_to_polygon(&polygon));
         }
       }
       Some("MultiPolygon") => {
@@ -89,7 +89,7 @@ impl Shapefile {
           return Ok(());
         }
         if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
-          self.polygons.push(coords_to_multi_polygon(multi_polygon));
+          self.polygons.push(coords_to_multi_polygon(&multi_polygon));
         }
       }
       Some(s) => return Err(format!("Not implemented for {}", s)),
@@ -136,11 +136,11 @@ pub fn coords_to_rev_points(line: &Vec<Vec<f64>>) -> Vec<Point> {
   points
 }
 
-pub fn coords_to_polyline(polyline: Vec<Vec<f64>>) -> Polyline {
-  Polyline::new(coords_to_points(&polyline))
+pub fn coords_to_polyline(polyline: &Vec<Vec<f64>>) -> Polyline {
+  Polyline::new(coords_to_points(polyline))
 }
 
-pub fn coords_to_multi_polyline(polylines: Vec<Vec<Vec<f64>>>) -> Polyline {
+pub fn coords_to_multi_polyline(polylines: &Vec<Vec<Vec<f64>>>) -> Polyline {
   let mut parts: Vec<Vec<Point>> = vec![];
   for polyline in polylines {
     parts.push(coords_to_points(&polyline));
@@ -148,27 +148,27 @@ pub fn coords_to_multi_polyline(polylines: Vec<Vec<Vec<f64>>>) -> Polyline {
   Polyline::with_parts(parts)
 }
 
-pub fn coords_to_polygon(polygon: Vec<Vec<Vec<f64>>>) -> Polygon {
+pub fn coords_to_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> Polygon {
   let mut parts: Vec<Vec<Point>> = vec![];
   for (pos, polyline) in polygon.iter().enumerate() {
     let part: Vec<Point> = if pos == 0 {
-      coords_to_points(polyline) // Outer
+      coords_to_points(&polyline) // Outer
     } else {
-      coords_to_rev_points(polyline) // Inner
+      coords_to_rev_points(&polyline) // Inner
     };
     parts.push(part);
   }
   Polygon::with_parts(parts)
 }
 
-pub fn coords_to_multi_polygon(multi_polygon: Vec<Vec<Vec<Vec<f64>>>>) -> Polygon {
+pub fn coords_to_multi_polygon(multi_polygon: &Vec<Vec<Vec<Vec<f64>>>>) -> Polygon {
   let mut parts: Vec<Vec<Point>> = vec![];
   for polygon in multi_polygon {
     for (pos, polyline) in polygon.iter().enumerate() {
       let part: Vec<Point> = if pos == 0 {
-        coords_to_points(polyline) // Outer
+        coords_to_points(&polyline) // Outer
       } else {
-        coords_to_rev_points(polyline) // Inner
+        coords_to_rev_points(&polyline) // Inner
       };
       parts.push(part);
     }
@@ -200,6 +200,38 @@ mod test_shapefile {
     assert_eq!(
       coords_to_points(&vec![vec![10., -20.]]),
       vec![Point::new(10., -20.)]
+    );
+    assert_eq!(
+      coords_to_points(&vec![vec![10., -20.], vec![15., -25.], vec![-20., 15.]]),
+      vec![
+        Point::new(10., -20.),
+        Point::new(15., -25.),
+        Point::new(-20., 15.)
+      ]
+    );
+  }
+
+  #[test]
+  pub fn test_coords_to_polyline() {
+    assert_eq!(
+      coords_to_polyline(&vec![vec![10., 20.]]),
+      Polyline::new(vec![Point::new(10., 20.)])
+    );
+    assert_eq!(
+      coords_to_polyline(&vec![vec![-10., 20.]]),
+      Polyline::new(vec![Point::new(-10., 20.)])
+    );
+    assert_eq!(
+      coords_to_polyline(&vec![vec![10., -20.]]),
+      Polyline::new(vec![Point::new(10., -20.)])
+    );
+    assert_eq!(
+      coords_to_polyline(&vec![vec![10., -20.], vec![15., -25.], vec![-20., 15.]]),
+      Polyline::new(vec![
+        Point::new(10., -20.),
+        Point::new(15., -25.),
+        Point::new(-20., 15.)
+      ])
     );
   }
 }
