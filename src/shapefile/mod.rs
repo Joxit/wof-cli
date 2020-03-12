@@ -148,10 +148,20 @@ pub fn coords_to_multi_polyline(polylines: &Vec<Vec<Vec<f64>>>) -> Polyline {
   Polyline::with_parts(parts)
 }
 
+fn should_reverse_points(pos: usize, polyline: &Vec<Vec<f64>>) -> bool {
+  pos == 0
+    || polyline
+      .windows(2)
+      .map(|pts| (pts[1][0] - pts[0][0]) * (pts[1][1] + pts[0][1]))
+      .sum::<f64>()
+      / 2.0f64
+      < 0.0
+}
+
 pub fn coords_to_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> Polygon {
   let mut parts: Vec<Vec<Point>> = vec![];
   for (pos, polyline) in polygon.iter().enumerate() {
-    let part: Vec<Point> = if pos == 0 {
+    let part: Vec<Point> = if should_reverse_points(pos, &polyline) {
       coords_to_points(&polyline) // Outer
     } else {
       coords_to_rev_points(&polyline) // Inner
@@ -165,7 +175,7 @@ pub fn coords_to_multi_polygon(multi_polygon: &Vec<Vec<Vec<Vec<f64>>>>) -> Polyg
   let mut parts: Vec<Vec<Point>> = vec![];
   for polygon in multi_polygon {
     for (pos, polyline) in polygon.iter().enumerate() {
-      let part: Vec<Point> = if pos == 0 {
+      let part: Vec<Point> = if should_reverse_points(pos, &polyline) {
         coords_to_points(&polyline) // Outer
       } else {
         coords_to_rev_points(&polyline) // Inner
@@ -232,6 +242,64 @@ mod test_shapefile {
         Point::new(15., -25.),
         Point::new(-20., 15.)
       ])
+    );
+  }
+
+  #[test]
+  pub fn test_coords_to_polygon() {
+    let polygon = Polygon::with_parts(vec![
+      vec![
+        Point::new(-120.0, 60.0),
+        Point::new(120.0, 60.0),
+        Point::new(120.0, -60.0),
+        Point::new(-120.0, -60.0),
+        Point::new(-120.0, 60.0),
+      ],
+      vec![
+        Point::new(-60.0, 30.0),
+        Point::new(-60.0, -30.0),
+        Point::new(60.0, -30.0),
+        Point::new(60.0, 30.0),
+        Point::new(-60.0, 30.0),
+      ],
+    ]);
+    assert_eq!(
+      coords_to_polygon(&vec![
+        vec![
+          vec![-120.0, 60.0],
+          vec![120.0, 60.0],
+          vec![120.0, -60.0],
+          vec![-120.0, -60.0],
+          vec![-120.0, 60.0],
+        ],
+        vec![
+          vec![-60.0, 30.0],
+          vec![-60.0, -30.0],
+          vec![60.0, -30.0],
+          vec![60.0, 30.0],
+          vec![-60.0, 30.0],
+        ]
+      ]),
+      polygon
+    );
+    assert_eq!(
+      coords_to_polygon(&vec![
+        vec![
+          vec![-120.0, 60.0],
+          vec![120.0, 60.0],
+          vec![120.0, -60.0],
+          vec![-120.0, -60.0],
+          vec![-120.0, 60.0],
+        ],
+        vec![
+          vec![-60.0, 30.0],
+          vec![60.0, 30.0],
+          vec![60.0, -30.0],
+          vec![-60.0, -30.0],
+          vec![-60.0, 30.0],
+        ]
+      ]),
+      polygon
     );
   }
 }
