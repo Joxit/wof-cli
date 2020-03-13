@@ -6,7 +6,7 @@ RUN apt-get update \
 COPY Cargo.toml .
 RUN cargo fetch
 COPY src src
-RUN cargo build --release
+RUN cargo build --release --features cli
 
 FROM golang:1-buster as go-builder
 COPY --from=rust-builder /opt/rust/wof/target/release/wof /bin/
