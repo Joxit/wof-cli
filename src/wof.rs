@@ -294,4 +294,19 @@ impl<'a> WOFGeoJSON<'a> {
   pub fn get_supersedes(&self) -> String {
     "".to_string()
   }
+
+  pub fn get_belongs_to(&self) -> Vec<i32> {
+    let mut belongs_to: Vec<i32> = vec![];
+    if let Some(wof_belongs_to) = self.properties.get("wof:belongsto") {
+      if let Some(wof_belongs_to) = wof_belongs_to.as_array() {
+        for id in wof_belongs_to.iter() {
+          if !id.as_i32().is_some() {
+            continue;
+          }
+          belongs_to.push(id.as_i32().unwrap());
+        }
+      }
+    }
+    belongs_to
+  }
 }

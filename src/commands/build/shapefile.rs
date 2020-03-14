@@ -1,8 +1,11 @@
-use crate::commands::Command;
+use crate::repo::Walk;
+use crate::shapefile;
 use crate::utils::ResultExit;
+use crate::wof::WOFGeoJSON;
+use log::{error, info};
+use std::path::Path;
+use std::time::SystemTime;
 use structopt::StructOpt;
-
-static BINARY: &'static str = "wof-shapefile-index";
 
 #[derive(Debug, StructOpt)]
 pub struct Shapefile {
@@ -10,7 +13,7 @@ pub struct Shapefile {
   pub directory: String,
   /// Include only records that belong to this ID. You may pass multiple -belongs-to flags.
   #[structopt(long = "belongs-to")]
-  pub belongs_to: Option<Vec<u32>>,
+  pub belongs_to: Option<Vec<i32>>,
   /// Exclude records of this placetype. You may pass multiple -exclude-placetype flags.
   #[structopt(long = "exclude-placetype")]
   pub exclude: Option<Vec<String>>,
@@ -23,16 +26,20 @@ pub struct Shapefile {
       possible_values = &["directory", "feature", "feature-collection", "files", "geojson-ls", "meta", "path", "repo", "sqlite"],
       default_value = "repo")]
   pub mode: String,
-  /// Where to write the new shapefile
-  #[structopt(long = "out")]
-  pub out: Option<String>,
+  /// Where to write the new shapefile.
+  #[structopt(long = "out", default_value = "whosonfirst-data-latest.shp")]
+  pub out: String,
+  // todo: "MULTIPOINT"
   /// The shapefile type to use indexing data.
   #[structopt(
       long = "shapetype",
-      possible_values = &["MULTIPOINT", "POINT", "POLYGON", "POLYLINE"],
+      possible_values = &["POINT", "POLYLINE", "POLYGON"],
       case_insensitive = false,
       default_value = "POLYGON")]
   pub shapetype: String,
+  /// Activate verbose mode.
+  #[structopt(short = "v", long = "verbose")]
+  pub verbose: bool,
   /// Display timings during and after indexing
   #[structopt(long = "timings")]
   pub timings: bool,
@@ -40,54 +47,77 @@ pub struct Shapefile {
 
 impl Shapefile {
   pub fn exec(&self) {
-    let mut args: Vec<String> = Vec::new();
+    crate::utils::logger::set_verbose(self.verbose || self.timings, "wof::build::shapefile")
+      .expect_exit("Can't init logger.");
 
-    Command::assert_cmd_exists(BINARY, "wof install shapefile");
+    let shapetype = match self.shapetype.to_uppercase().as_ref() {
+      "POINT" => shapefile::ShapeType::Point,
+      "POLYLINE" => shapefile::ShapeType::Polyline,
+      "POLYGON" => shapefile::ShapeType::Polygon,
+      s => {
+        error!("Unknonw shape type {}", s);
+        std::process::exit(1);
+      }
+    };
 
-    Command::push_optional_args(&mut args, "-belongs-to", &self.belongs_to);
-    Command::push_optional_args(&mut args, "-exclude-placetype", &self.exclude);
-    Command::push_optional_args(&mut args, "-include-placetype", &self.include);
-    Command::push_optional_arg(&mut args, "-out", &self.out);
-    Command::push_arg(&mut args, "-mode", &self.mode);
-    Command::push_arg(&mut args, "-shapetype", &self.shapetype);
-    if self.timings {
-      args.push("-timings".to_string());
+    let mut shapefile = shapefile::Shapefile::new(
+      &self.out,
+      shapefile::ShapefileOpts {
+        deprecated: false,
+        shapetype: shapetype,
+      },
+    )
+    .expect_exit("Can't open the shapefile.");
+
+    info!("Create a shapefile with {:?}", shapetype);
+    let import_start = SystemTime::now();
+
+    for entry in Walk::new(self.directory.to_string(), false, true) {
+      if let Ok(path) = entry {
+        if let Err(e) = self.add_file(&mut shapefile, path.path()) {
+          error!("Something goes wrong for {}: {}", path.path().display(), e);
+        }
+      }
     }
-    args.push(self.directory.to_string());
 
-    let mut child = std::process::Command::new(BINARY)
-      .stdin(std::process::Stdio::inherit())
-      .stdout(std::process::Stdio::inherit())
-      .stderr(std::process::Stdio::inherit())
-      .args(args)
-      .spawn()
-      .expect_exit(format!("Something goes wrong with the `{}` command line", BINARY).as_ref());
+    shapefile
+      .write()
+      .expect_exit("Something goes wrong when writing shapes.");
 
-    if let Ok(status) = child.wait() {
-      std::process::exit(status.code().unwrap_or(1));
+    if self.timings {
+      info!(
+        "Import finished successfully in {:?}.",
+        import_start.elapsed().unwrap()
+      );
     } else {
-      println!("shapefile cmd didn't start correctly");
+      info!("Import finished successfully.");
     }
   }
 
-  pub fn install() {
-    let mut child = std::process::Command::new("sh")
-    .arg("-c")
-    .arg("
-mkdir -p /tmp/go-whosonfirst-shapefile ~/.wof/bin/ \
-&& cd /tmp/go-whosonfirst-shapefile \
-&& curl -sSL https://github.com/whosonfirst/go-whosonfirst-shapefile/archive/3861ef8.tar.gz | tar zx --strip-components=1 \
-&& make bin \
-&& mv bin/wof-shapefile-index ~/.wof/bin/ \
-")
-  .stdin(std::process::Stdio::inherit())
-  .stdout(std::process::Stdio::inherit())
-  .stderr(std::process::Stdio::inherit())
-  .spawn()
-  .expect_exit(format!("Something goes wrong with the `{}` command line", BINARY).as_ref());
-
-    if let Ok(status) = child.wait() {
-      std::process::exit(status.code().unwrap_or(1));
+  fn add_file<P: AsRef<Path>>(
+    &self,
+    shapefile: &mut shapefile::Shapefile,
+    path: P,
+  ) -> Result<(), String> {
+    let json = crate::parse_file_to_json(path.as_ref().to_path_buf())?;
+    let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
+    if let Some(include) = &self.include {
+      if !include.contains(&geojson.get_placetype()) {
+        return Ok(());
+      }
     }
+    if let Some(exclude) = &self.exclude {
+      if exclude.contains(&geojson.get_placetype()) {
+        return Ok(());
+      }
+    }
+    if let Some(belongs_to) = &self.belongs_to {
+      for id in &geojson.get_belongs_to() {
+        if !belongs_to.contains(id) {
+          return Ok(());
+        }
+      }
+    }
+    shapefile.add(geojson)
   }
 }

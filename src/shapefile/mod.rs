@@ -23,7 +23,7 @@ pub struct ShapefileOpts {
   pub shapetype: ShapeType,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ShapeType {
   Point,
   Polygon,
@@ -42,6 +42,7 @@ impl Shapefile {
     })
   }
 
+  /// Add a WOFGeoJSON document to the shapefile.
   pub fn add(&mut self, wof_obj: WOFGeoJSON) -> Result<(), String> {
     let geom_type = match wof_obj.geometry.get("type") {
       Some(v) => v.as_str(),

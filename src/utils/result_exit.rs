@@ -31,9 +31,7 @@ impl<T, E: std::fmt::Display> ResultExit<T> for Result<T, E> {
   fn exit_silently(self) -> T {
     match self {
       Ok(t) => t,
-      Err(_) => {
-        std::process::exit(0);
-      }
+      Err(_) => std::process::exit(0),
     }
   }
 }
