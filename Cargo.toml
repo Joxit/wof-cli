@@ -10,7 +10,8 @@ repository = "https://github.com/Joxit/wof-cli"
 homepage = "https://github.com/Joxit/wof-cli"
 documentation = "https://docs.rs/wof/"
 readme = "README.md"
-categories = ["cli"]
+keywords = ["cli"]
+categories = ["command-line-utilities", "database-implementations", "data-structures", "parser-implementations"]
 
 [[bin]]
 name = "wof"

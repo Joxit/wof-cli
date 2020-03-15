@@ -22,12 +22,14 @@
 //! assert_eq!(id_to_data_path_geojson(890442055).as_path(), Path::new("data/890/442/055/890442055.geojson"));
 //!```
 
+pub mod compute;
 mod json;
 #[cfg(feature = "cli")]
 pub mod logger;
 mod path;
 #[cfg(feature = "cli")]
 pub mod result_exit;
+pub use crate::utils::compute::ComputeArea;
 pub use crate::utils::json::{GeoJsonUtils, JsonUtils};
 pub use crate::utils::path::{
   id_to_data_path_folder, id_to_data_path_geojson, id_to_path_folder, id_to_path_geojson,
