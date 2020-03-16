@@ -1,7 +1,8 @@
 use crate::utils::GeoJsonUtils;
 
-pub trait ComputeArea {
+pub trait GeoCompute {
   fn compute_area(&self) -> f64;
+  fn compute_bbox(&self) -> Vec<f64>;
 }
 
 #[inline]
@@ -22,19 +23,34 @@ fn compute_area_geojson_polygon(polygon: Vec<Vec<Vec<f64>>>) -> f64 {
   area
 }
 
-impl ComputeArea for Vec<f64> {
+impl GeoCompute for Vec<f64> {
   fn compute_area(&self) -> f64 {
     0.0
   }
-}
 
-impl ComputeArea for Vec<Vec<f64>> {
-  fn compute_area(&self) -> f64 {
-    self.windows(2).map(|pts| compute_diff(&pts)).sum::<f64>() / 2.0f64
+  fn compute_bbox(&self) -> Vec<f64> {
+    vec![self[0], self[1], self[0], self[1]]
   }
 }
 
-impl<'a> ComputeArea for crate::WOFGeoJSON<'a> {
+impl GeoCompute for Vec<Vec<f64>> {
+  fn compute_area(&self) -> f64 {
+    self.windows(2).map(|pts| compute_diff(&pts)).sum::<f64>() / 2.0f64
+  }
+
+  fn compute_bbox(&self) -> Vec<f64> {
+    self.iter().fold(self[0].compute_bbox(), |bbox, pts| {
+      vec![
+        bbox[0].min(pts[0]),
+        bbox[1].min(pts[1]),
+        bbox[2].max(pts[0]),
+        bbox[3].max(pts[1]),
+      ]
+    })
+  }
+}
+
+impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
   fn compute_area(&self) -> f64 {
     let geom_type = match self.geometry.get("type") {
       Some(v) => v.as_str(),
@@ -63,6 +79,55 @@ impl<'a> ComputeArea for crate::WOFGeoJSON<'a> {
     }
     0.
   }
+  fn compute_bbox(&self) -> Vec<f64> {
+    let geom_type = match self.geometry.get("type") {
+      Some(v) => v.as_str(),
+      _ => return vec![0., 0., 0., 0.],
+    };
+    let coords = match self.geometry.get("coordinates") {
+      Some(c) => c,
+      _ => return vec![0., 0., 0., 0.],
+    };
+    match geom_type {
+      Some("Point") => {
+        if let Some(point) = coords.as_geom_point() {
+          return point.compute_bbox();
+        }
+      }
+      Some("MultiPoint") => {
+        if let Some(multi_point) = coords.as_geom_multi_point() {
+          return multi_point.compute_bbox();
+        }
+      }
+      Some("LineString") => {
+        if let Some(line) = coords.as_geom_line() {
+          return line.compute_bbox();
+        }
+      }
+      Some("Polygon") => {
+        if let Some(polygon) = coords.as_geom_polygon() {
+          return polygon[0].compute_bbox();
+        }
+      }
+      Some("MultiPolygon") => {
+        if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
+          return multi_polygon
+            .iter()
+            .fold(multi_polygon[0][0].compute_bbox(), |bbox, polygon| {
+              let p_bbox = polygon[0].compute_bbox();
+              vec![
+                bbox[0].min(p_bbox[0]),
+                bbox[1].min(p_bbox[1]),
+                bbox[2].max(p_bbox[2]),
+                bbox[3].max(p_bbox[3]),
+              ]
+            });
+        }
+      }
+      _ => {}
+    }
+    vec![0., 0., 0., 0.]
+  }
 }
 
 #[cfg(test)]
@@ -72,6 +137,7 @@ mod compute_area {
   pub fn point() {
     let point = vec![-71.0, 41.0];
     assert_eq!(point.compute_area(), 0.0);
+    assert_eq!(point.compute_bbox(), vec![-71.0, 41.0, -71.0, 41.0]);
   }
 
   #[test]
@@ -84,5 +150,6 @@ mod compute_area {
       vec![125.0, -15.0],
     ];
     assert_eq!(polygon.compute_area(), 287.5);
+    assert_eq!(polygon.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
   }
 }
