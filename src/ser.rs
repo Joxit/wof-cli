@@ -1,21 +1,34 @@
 //! Serialize a JSON with the pretty WOF style or single line JSON.
 use crate::{JsonObject, JsonValue};
-use json::codegen::{Generator, WriterGenerator};
+use json::codegen::Generator;
 use std::io::{self, Result, Write};
 
 struct WOFGenerator<'a, W> {
   writer: &'a mut W,
   dent: u16,
+  pretty: bool,
+  key: String,
 }
 
 impl<'a, W> WOFGenerator<'a, W>
 where
   W: Write,
 {
-  pub fn new(writer: &'a mut W) -> WOFGenerator<W> {
+  pub fn pretty(writer: &'a mut W) -> WOFGenerator<W> {
     WOFGenerator {
       writer: writer,
       dent: 0,
+      pretty: true,
+      key: String::new(),
+    }
+  }
+
+  pub fn ugly(writer: &'a mut W) -> WOFGenerator<W> {
+    WOFGenerator {
+      writer: writer,
+      dent: 0,
+      pretty: false,
+      key: String::new(),
     }
   }
 
@@ -48,7 +61,7 @@ where
           self.write_json(value)
         }
       }
-      "geometry" => value.write(&mut self.writer),
+      "geometry" => WOFGenerator::ugly(self.writer).write_json(value),
       _ => self.write_json(value),
     }
   }
@@ -67,7 +80,7 @@ where
 
   #[inline(always)]
   fn write_min(&mut self, colon_space: &[u8], colon: u8) -> io::Result<()> {
-    if self.dent == 1 {
+    if self.dent == 1 && self.pretty {
       self.writer.write_all(colon_space)
     } else {
       self.writer.write_all(&[colon])
@@ -92,6 +105,7 @@ where
       self.new_line()?;
       self.write_string(key)?;
       self.write_min(b": ", b':')?;
+      self.key = key.to_string();
       self.write_object_value_by_key(key, value)?;
     } else {
       self.write_char(b'}')?;
@@ -103,6 +117,7 @@ where
       self.new_line()?;
       self.write_string(key)?;
       self.write_min(b": ", b':')?;
+      self.key = key.to_string();
       self.write_object_value_by_key(key, value)?;
     }
 
@@ -120,17 +135,44 @@ where
   }
 
   fn new_line(&mut self) -> io::Result<()> {
+    if !self.pretty {
+      return Ok(());
+    }
     self.write_char(b'\n')?;
     for _ in 0..(self.dent * 2) {
       self.write_char(b' ')?;
     }
     Ok(())
   }
+
+  fn write_number(&mut self, num: &json::number::Number) -> io::Result<()> {
+    if num.is_nan() {
+      return self.write(b"null");
+    }
+    let (positive, mantissa, exponent) = num.as_parts();
+    let natural: u64 = ((mantissa as f64) * 10_f64.powi(exponent as i32)) as u64;
+    let decimal = if exponent < 0 {
+      format!(".{}", (mantissa - (natural * 10_u64.pow(-exponent as u32))))
+    } else if self.key != String::from("coordinates")
+      && self.key != String::from("bbox")
+      && self.key != String::from("geom:area")
+      && self.key != String::from("geom:latitude")
+      && self.key != String::from("geom:longitude")
+    {
+      String::new()
+    } else {
+      String::from(".0")
+    };
+    let sign = if positive { "" } else { "-" };
+
+    write!(self.writer, "{}{}{}", sign, natural, decimal)
+  }
 }
 
 fn wof_first_level_classify(key: &str) -> i32 {
   match key {
     "id" => 0,
+    "coordinates" => 0,
     "type" => 1,
     "properties" => 2,
     "bbox" => 4,
@@ -155,13 +197,13 @@ fn wof_first_level_ordering(
 /// Serialize a [`JsonValue`](../../json/value/enum.JsonValue.html) as a JSON into the IO stream.
 #[inline]
 pub fn json_to_writer<W: Write>(json: &JsonValue, mut writer: &mut W) -> Result<()> {
-  WriterGenerator::new(&mut writer).write_json(&json)
+  WOFGenerator::ugly(&mut writer).write_json(&json)
 }
 
 /// Serialize an [`Object`](../../json/object/struct.Object.html) as a JSON into the IO stream.
 #[inline]
 pub fn object_to_writer<W: Write>(object: &JsonObject, mut writer: &mut W) -> Result<()> {
-  WriterGenerator::new(&mut writer).write_object(&object)
+  WOFGenerator::ugly(&mut writer).write_object(&object)
 }
 
 /// Serialize a [`WOFGeoJSON`](../struct.WOFGeoJSON.html) as a JSON into the IO stream.
@@ -173,13 +215,13 @@ pub fn wof_to_writer<W: Write>(wof: &crate::wof::WOFGeoJSON, writer: &mut W) -> 
 /// Serialize a [`JsonValue`](../../json/value/enum.JsonValue.html) as a WOF pretty-printed JSON into the IO stream.
 #[inline]
 pub fn json_to_writer_pretty<W: Write>(json: &JsonValue, mut writer: &mut W) -> Result<()> {
-  WOFGenerator::new(&mut writer).write_json(&json)
+  WOFGenerator::pretty(&mut writer).write_json(&json)
 }
 
 /// Serialize an [`Object`](../../json/object/struct.Object.html) as a WOF pretty-printed JSON into the IO stream.
 #[inline]
 pub fn object_to_writer_pretty<W: Write>(object: &JsonObject, mut writer: &mut W) -> Result<()> {
-  WOFGenerator::new(&mut writer).write_object(&object)
+  WOFGenerator::pretty(&mut writer).write_object(&object)
 }
 
 /// Serialize a [`WOFGeoJSON`](../struct.WOFGeoJSON.html) as a WOF pretty-printed JSON into the IO stream.
