@@ -1,6 +1,9 @@
 name: Rust
 
-on: [push]
+on:
+  push:
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -13,3 +16,8 @@ jobs:
       run: cargo build --features cli --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Publish
+      if: success() && github.event_name == 'release'
+      env:
+        CRATE_IO_ACCESS_TOKEN: ${{ secrets.CRATE_IO_ACCESS_TOKEN }}
+      run: cargo publish --token $CRATE_IO_ACCESS_TOKEN
