@@ -1,7 +1,6 @@
 use crate::std::StringifyError;
 use crate::utils::GeoJsonUtils;
 use crate::wof::WOFGeoJSON;
-use shapefile::record::poly::*;
 use shapefile::*;
 use std::fs::File;
 use std::io::BufWriter;
@@ -103,15 +102,15 @@ impl Shapefile {
     match self.opts.shapetype {
       ShapeType::Point => self
         .writer
-        .write_shapes(self.points)
+        .write_shapes(&self.points)
         .stringify_err("Something goes wrong when adding points to the shapefile"),
       ShapeType::Polyline => self
         .writer
-        .write_shapes(self.polylines)
+        .write_shapes(&self.polylines)
         .stringify_err("Something goes wrong when adding polylines to the shapefile"),
       ShapeType::Polygon => self
         .writer
-        .write_shapes(self.polygons)
+        .write_shapes(&self.polygons)
         .stringify_err("Something goes wrong when adding polygons to the shapefile"),
     }
   }
@@ -129,14 +128,6 @@ pub fn coords_to_points(line: &Vec<Vec<f64>>) -> Vec<Point> {
   points
 }
 
-pub fn coords_to_rev_points(line: &Vec<Vec<f64>>) -> Vec<Point> {
-  let mut points = vec![];
-  for point in line.iter().rev() {
-    points.push(coords_to_point(point));
-  }
-  points
-}
-
 pub fn coords_to_polyline(polyline: &Vec<Vec<f64>>) -> Polyline {
   Polyline::new(coords_to_points(polyline))
 }
@@ -149,42 +140,31 @@ pub fn coords_to_multi_polyline(polylines: &Vec<Vec<Vec<f64>>>) -> Polyline {
   Polyline::with_parts(parts)
 }
 
-fn should_reverse_points(pos: usize, polyline: &Vec<Vec<f64>>) -> bool {
-  pos == 0
-    || polyline
-      .windows(2)
-      .map(|pts| (pts[1][0] - pts[0][0]) * (pts[1][1] + pts[0][1]))
-      .sum::<f64>()
-      / 2.0f64
-      < 0.0
+fn coords_to_polygon_rings(polygon: &Vec<Vec<Vec<f64>>>) -> Vec<PolygonRing<Point>> {
+  polygon
+    .iter()
+    .enumerate()
+    .map(|(pos, polyline)| {
+      if pos == 0 {
+        PolygonRing::Outer(coords_to_points(&polyline))
+      } else {
+        PolygonRing::Inner(coords_to_points(&polyline))
+      }
+    })
+    .collect()
 }
 
 pub fn coords_to_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> Polygon {
-  let mut parts: Vec<Vec<Point>> = vec![];
-  for (pos, polyline) in polygon.iter().enumerate() {
-    let part: Vec<Point> = if should_reverse_points(pos, &polyline) {
-      coords_to_points(&polyline) // Outer
-    } else {
-      coords_to_rev_points(&polyline) // Inner
-    };
-    parts.push(part);
-  }
-  Polygon::with_parts(parts)
+  Polygon::with_rings(coords_to_polygon_rings(polygon))
 }
 
 pub fn coords_to_multi_polygon(multi_polygon: &Vec<Vec<Vec<Vec<f64>>>>) -> Polygon {
-  let mut parts: Vec<Vec<Point>> = vec![];
-  for polygon in multi_polygon {
-    for (pos, polyline) in polygon.iter().enumerate() {
-      let part: Vec<Point> = if should_reverse_points(pos, &polyline) {
-        coords_to_points(&polyline) // Outer
-      } else {
-        coords_to_rev_points(&polyline) // Inner
-      };
-      parts.push(part);
-    }
-  }
-  Polygon::with_parts(parts)
+  Polygon::with_rings(
+    multi_polygon
+      .iter()
+      .flat_map(self::coords_to_polygon_rings)
+      .collect(),
+  )
 }
 
 #[cfg(test)]
@@ -225,16 +205,8 @@ mod test_shapefile {
   #[test]
   pub fn test_coords_to_polyline() {
     assert_eq!(
-      coords_to_polyline(&vec![vec![10., 20.]]),
-      Polyline::new(vec![Point::new(10., 20.)])
-    );
-    assert_eq!(
-      coords_to_polyline(&vec![vec![-10., 20.]]),
-      Polyline::new(vec![Point::new(-10., 20.)])
-    );
-    assert_eq!(
-      coords_to_polyline(&vec![vec![10., -20.]]),
-      Polyline::new(vec![Point::new(10., -20.)])
+      coords_to_polyline(&vec![vec![10., 20.], vec![15., 25.]]),
+      Polyline::new(vec![Point::new(10., 20.), Point::new(15., 25.)])
     );
     assert_eq!(
       coords_to_polyline(&vec![vec![10., -20.], vec![15., -25.], vec![-20., 15.]]),
@@ -248,22 +220,22 @@ mod test_shapefile {
 
   #[test]
   pub fn test_coords_to_polygon() {
-    let polygon = Polygon::with_parts(vec![
-      vec![
-        Point::new(-120.0, 60.0),
-        Point::new(120.0, 60.0),
-        Point::new(120.0, -60.0),
-        Point::new(-120.0, -60.0),
-        Point::new(-120.0, 60.0),
-      ],
-      vec![
-        Point::new(-60.0, 30.0),
-        Point::new(-60.0, -30.0),
-        Point::new(60.0, -30.0),
-        Point::new(60.0, 30.0),
-        Point::new(-60.0, 30.0),
-      ],
-    ]);
+    let polygon = polygon!(
+      Outer(
+        (-120.0, 60.0),
+        (120.0, 60.0),
+        (120.0, -60.0),
+        (-120.0, -60.0),
+        (-120.0, 60.0)
+      ),
+      Inner(
+        (-60.0, 30.0),
+        (-60.0, -30.0),
+        (60.0, -30.0),
+        (60.0, 30.0),
+        (-60.0, 30.0)
+      ),
+    );
     assert_eq!(
       coords_to_polygon(&vec![
         vec![
