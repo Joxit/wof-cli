@@ -55,7 +55,9 @@ where
           }
 
           self.dedent();
-          self.write_char(b'\n')?;
+          if self.pretty {
+            self.write_char(b'\n')?;
+          }
           self.write_char(b']')
         } else {
           self.write_json(value)
