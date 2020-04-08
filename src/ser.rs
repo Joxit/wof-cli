@@ -1,4 +1,5 @@
 //! Serialize a JSON with the pretty WOF style or single line JSON.
+use crate::utils::FloatFormat;
 use crate::{JsonObject, JsonValue};
 use json::codegen::Generator;
 use std::io::{self, Result, Write};
@@ -149,25 +150,15 @@ where
 
   fn write_number(&mut self, num: &json::number::Number) -> io::Result<()> {
     if num.is_nan() {
-      return self.write(b"null");
-    }
-    let (positive, mantissa, exponent) = num.as_parts();
-    let natural: u64 = ((mantissa as f64) * 10_f64.powi(exponent as i32)) as u64;
-    let decimal = if exponent < 0 {
-      format!(".{}", (mantissa - (natural * 10_u64.pow(-exponent as u32))))
-    } else if self.key != String::from("coordinates")
-      && self.key != String::from("bbox")
-      && self.key != String::from("geom:area")
-      && self.key != String::from("geom:latitude")
-      && self.key != String::from("geom:longitude")
-    {
-      String::new()
+      self.write(b"null")
     } else {
-      String::from(".0")
-    };
-    let sign = if positive { "" } else { "-" };
-
-    write!(self.writer, "{}{}{}", sign, natural, decimal)
+      let force = self.key == String::from("coordinates")
+        || self.key == String::from("bbox")
+        || self.key == String::from("geom:area")
+        || self.key == String::from("geom:latitude")
+        || self.key == String::from("geom:longitude");
+      write!(self.writer, "{}", num.as_parts().fmt_with_decimal(force))
+    }
   }
 }
 
