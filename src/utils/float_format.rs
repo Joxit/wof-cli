@@ -29,6 +29,14 @@ impl FloatFormat for (bool, u64, i16) {
   }
 }
 
+impl FloatFormat for f64 {
+  fn fmt_with_decimal(self, force: bool) -> String {
+    json::number::Number::from(self)
+      .as_parts()
+      .fmt_with_decimal(force)
+  }
+}
+
 #[cfg(test)]
 mod test {
   use super::*;
@@ -41,6 +49,7 @@ mod test {
     assert_eq!((false, 1, -8).fmt_with_decimal(true), "-0.00000001");
     assert_eq!((true, 1, 2).fmt_with_decimal(true), "100.0");
   }
+
   #[test]
   pub fn num_parts() {
     assert_eq!((true, 0, 0).fmt_with_decimal(false), "0");
@@ -49,6 +58,26 @@ mod test {
     assert_eq!((true, 1, -8).fmt_with_decimal(false), "0.00000001");
     assert_eq!((false, 1, -8).fmt_with_decimal(false), "-0.00000001");
     assert_eq!((true, 1, 2).fmt_with_decimal(false), "100");
+  }
+
+  #[test]
+  pub fn f64_force() {
+    assert_eq!((0.0).fmt_with_decimal(true), "0.0");
+    assert_eq!((123.456).fmt_with_decimal(true), "123.456");
+    assert_eq!((-987.654).fmt_with_decimal(true), "-987.654");
+    assert_eq!((0.00000001).fmt_with_decimal(true), "0.00000001");
+    assert_eq!((-0.00000001).fmt_with_decimal(true), "-0.00000001");
+    assert_eq!((100.0).fmt_with_decimal(true), "100.0");
+  }
+
+  #[test]
+  pub fn f64() {
+    assert_eq!((0.0).fmt_with_decimal(false), "0");
+    assert_eq!((123.456).fmt_with_decimal(false), "123.456");
+    assert_eq!((-987.654).fmt_with_decimal(false), "-987.654");
+    assert_eq!((0.00000001).fmt_with_decimal(false), "0.00000001");
+    assert_eq!((-0.00000001).fmt_with_decimal(false), "-0.00000001");
+    assert_eq!((100.0).fmt_with_decimal(false), "100");
   }
 
   #[test]
