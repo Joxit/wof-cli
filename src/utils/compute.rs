@@ -1,3 +1,4 @@
+use crate::utils::FloatFormat;
 use crate::utils::GeoJsonUtils;
 use json::JsonValue;
 use md5;
@@ -6,6 +7,17 @@ pub trait GeoCompute {
   fn compute_area(&self) -> f64;
   fn compute_bbox(&self) -> Vec<f64>;
   fn compute_md5(&self) -> String;
+
+  fn compute_bbox_string(&self) -> String {
+    let bbox = self.compute_bbox();
+    format!(
+      "{},{},{},{}",
+      bbox[0].fmt_with_decimal(true),
+      bbox[1].fmt_with_decimal(true),
+      bbox[2].fmt_with_decimal(true),
+      bbox[3].fmt_with_decimal(true)
+    )
+  }
 }
 
 #[inline]
@@ -156,13 +168,14 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
 }
 
 #[cfg(test)]
-mod compute_area {
+mod test {
   use super::*;
   #[test]
   pub fn point() {
     let point = vec![-71.0, 41.0];
     assert_eq!(point.compute_area(), 0.0);
     assert_eq!(point.compute_bbox(), vec![-71.0, 41.0, -71.0, 41.0]);
+    assert_eq!(point.compute_bbox_string(), "-71.0,41.0,-71.0,41.0");
   }
 
   #[test]
@@ -176,6 +189,7 @@ mod compute_area {
     ];
     assert_eq!(polygon.compute_area(), 287.5);
     assert_eq!(polygon.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
+    assert_eq!(polygon.compute_bbox_string(), "113.0,-27.0,154.0,-15.0");
   }
 
   #[test]
@@ -200,7 +214,11 @@ mod compute_area {
     };
     let wof_obj = crate::WOFGeoJSON::as_valid_wof_geojson(&json).unwrap();
     assert_eq!(wof_obj.compute_area(), 287.5);
+    // assert_eq!(wof_obj.compute_area_m(), 3332714287168.220703);
     assert_eq!(wof_obj.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
+    assert_eq!(wof_obj.compute_bbox_string(), "113.0,-27.0,154.0,-15.0");
+    // assert_eq!(wof_obj.compute_latitude(), -20.408116);
+    // assert_eq!(wof_obj.compute_longitude(), -20.408116);
     assert_eq!(wof_obj.compute_md5(), "1d113db66a333671083cf93919ed85b9");
   }
 }
