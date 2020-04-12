@@ -56,7 +56,7 @@ impl GeoCompute for Vec<f64> {
 
 impl GeoCompute for Vec<Vec<f64>> {
   fn compute_area(&self) -> f64 {
-    self.windows(2).map(|pts| compute_diff(&pts)).sum::<f64>() / 2.0f64
+    (self.windows(2).map(|pts| compute_diff(&pts)).sum::<f64>() / 2.0f64).abs()
   }
 
   fn compute_bbox(&self) -> Vec<f64> {
