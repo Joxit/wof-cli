@@ -8,6 +8,7 @@ pub trait GeoCompute {
   fn compute_bbox(&self) -> Vec<f64>;
   fn compute_md5(&self) -> String;
   fn compute_centroid(&self) -> (f64, f64);
+  fn compute_center_of_mass(&self) -> (f64, f64);
 
   fn compute_bbox_string(&self) -> String {
     let bbox = self.compute_bbox();
@@ -64,6 +65,10 @@ impl GeoCompute for Vec<f64> {
     (self[0], self[1])
   }
 
+  fn compute_center_of_mass(&self) -> (f64, f64) {
+    (self[0], self[1])
+  }
+
   fn compute_md5(&self) -> String {
     let f32_array: Vec<f32> = self.iter().map(|e| *e as f32).collect();
     let digest = md5::compute(JsonValue::from(f32_array).dump());
@@ -90,6 +95,39 @@ impl GeoCompute for Vec<Vec<f64>> {
   fn compute_centroid(&self) -> (f64, f64) {
     let (x, y, len) = compute_centroid_polyline(self);
     (x / (len as f64), y / (len as f64))
+  }
+
+  fn compute_center_of_mass(&self) -> (f64, f64) {
+    let centroid = self.compute_centroid();
+    let neutralized: Vec<Vec<f64>> = self
+      .iter()
+      .map(|pts| vec![pts[0] - centroid.0, pts[1] - centroid.1])
+      .collect();
+
+    let mut sx: f64 = 0.;
+    let mut sy: f64 = 0.;
+    let mut s_area: f64 = 0.;
+
+    for i in 0..self.len() - 1 {
+      let xi = neutralized[i][0];
+      let yi = neutralized[i][1];
+      let xj = neutralized[i + 1][0];
+      let yj = neutralized[i + 1][1];
+
+      let a = xi * yj - xj * yi;
+
+      s_area += a;
+
+      sx += (xi + xj) * a;
+      sy += (yi + yj) * a;
+    }
+
+    if s_area == 0. {
+      centroid
+    } else {
+      let area_factor = 1. / (6. * s_area * 0.5);
+      (centroid.0 + area_factor * sx, centroid.1 + area_factor * sy)
+    }
   }
 
   fn compute_md5(&self) -> String {
@@ -233,6 +271,10 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
     (0., 0.)
   }
 
+  fn compute_center_of_mass(&self) -> (f64, f64) {
+    (0., 0.)
+  }
+
   fn compute_md5(&self) -> String {
     let mut result: Vec<u8> = vec![];
     crate::object_to_writer(self.geometry, &mut result).unwrap();
@@ -244,6 +286,12 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
 #[cfg(test)]
 mod test {
   use super::*;
+
+  fn assert_relative_eq(a: (f64, f64), b: (f64, f64)) {
+    assert_eq!(a.0 > b.0 - 0.000001 && a.0 < b.0 + 0.000001, true);
+    assert_eq!(a.1 > b.1 - 0.000001 && a.1 < b.1 + 0.000001, true);
+  }
+
   #[test]
   pub fn point() {
     let point = vec![-71.0, 41.0];
@@ -251,7 +299,7 @@ mod test {
     assert_eq!(point.compute_bbox(), vec![-71.0, 41.0, -71.0, 41.0]);
     assert_eq!(point.compute_bbox_string(), "-71.0,41.0,-71.0,41.0");
     assert_eq!(point.compute_centroid(), (-71.0, 41.0));
-    // assert_eq!(point.compute_center_of_mass(), (-71.0, 41.0));
+    assert_eq!(point.compute_center_of_mass(), (-71.0, 41.0));
   }
 
   #[test]
@@ -267,7 +315,7 @@ mod test {
     assert_eq!(polygon.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
     assert_eq!(polygon.compute_bbox_string(), "113.0,-27.0,154.0,-15.0");
     assert_eq!(polygon.compute_centroid(), (134.0, -19.75));
-    // assert_eq!(polygon.compute_center_of_mass(), (134.764058, -20.408116));
+    assert_relative_eq(polygon.compute_center_of_mass(), (134.764058, -20.408116));
   }
 
   #[test]
