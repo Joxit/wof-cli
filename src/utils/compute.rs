@@ -272,6 +272,42 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
   }
 
   fn compute_center_of_mass(&self) -> (f64, f64) {
+    let geom_type = match self.geometry.get("type") {
+      Some(v) => v.as_str(),
+      _ => return (0., 0.),
+    };
+    let coords = match self.geometry.get("coordinates") {
+      Some(c) => c,
+      _ => return (0., 0.),
+    };
+    match geom_type {
+      Some("Point") => {
+        if let Some(point) = coords.as_geom_point() {
+          return point.compute_center_of_mass();
+        }
+      }
+      Some("MultiPoint") => {
+        if let Some(multi_point) = coords.as_geom_multi_point() {
+          return multi_point.compute_center_of_mass();
+        }
+      }
+      Some("LineString") => {
+        if let Some(line) = coords.as_geom_line() {
+          return line.compute_center_of_mass();
+        }
+      }
+      Some("Polygon") => {
+        if let Some(polygon) = coords.as_geom_polygon() {
+          return polygon.concat().compute_center_of_mass();
+        }
+      }
+      Some("MultiPolygon") => {
+        if let Some(_multi_polygon) = coords.as_geom_multi_polygon() {
+          return (0., 0.);
+        }
+      }
+      _ => {}
+    }
     (0., 0.)
   }
 
@@ -344,7 +380,7 @@ mod test {
     assert_eq!(wof_obj.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
     assert_eq!(wof_obj.compute_bbox_string(), "113.0,-27.0,154.0,-15.0");
     assert_eq!(wof_obj.compute_centroid(), (134.0, -19.75));
-    // assert_eq!(wof_obj.compute_center_of_mass(), (134.764058, -20.408116));
+    assert_relative_eq(wof_obj.compute_center_of_mass(), (134.764058, -20.408116));
     assert_eq!(wof_obj.compute_md5(), "1d113db66a333671083cf93919ed85b9");
   }
 
