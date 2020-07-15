@@ -302,8 +302,50 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
         }
       }
       Some("MultiPolygon") => {
-        if let Some(_multi_polygon) = coords.as_geom_multi_polygon() {
-          return (0., 0.);
+        if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
+          let mut coords: Vec<Vec<f64>> = multi_polygon
+            .iter()
+            .map(|polys| polys[0].clone()) // filter inner polygons
+            .collect::<Vec<Vec<Vec<f64>>>>()
+            .concat(); // concat all polygons;
+          coords.sort_by(|p1, p2| {
+            let cmp = p1[0].partial_cmp(&p2[0]).unwrap();
+            if cmp == std::cmp::Ordering::Equal {
+              p1[1].partial_cmp(&p2[1]).unwrap()
+            } else {
+              cmp
+            }
+          });
+          coords.dedup();
+          let mut convex: Vec<Vec<f64>> = vec![coords[0].clone()];
+          let left = &coords[0];
+          let mut cur_pts = &coords[0];
+          let mut next_pts = &coords[1];
+          let mut idx = 2;
+
+          loop {
+            let checking = &coords[idx];
+            let a = vec![next_pts[0] - cur_pts[0], next_pts[1] - cur_pts[1]];
+            let b = vec![checking[0] - cur_pts[0], checking[1] - cur_pts[1]];
+            let z = a[0] * b[1] - a[1] * b[0];
+
+            if z < 0.0 {
+              next_pts = checking
+            }
+
+            idx = idx + 1;
+            if idx == coords.len() {
+              if *next_pts == *left {
+                break;
+              }
+              convex.push(next_pts.clone());
+              cur_pts = next_pts;
+              idx = 0;
+              next_pts = left;
+            }
+          }
+          convex.push(left.clone());
+          return convex.compute_center_of_mass();
         }
       }
       _ => {}
@@ -425,7 +467,7 @@ mod test {
       wof_obj.compute_centroid(),
       (101.16666666666667, 1.1666666666666667)
     );
-    // assert_eq!(wof_obj.compute_center_of_mass(), (101.719512, 1.719512));
+    assert_eq!(wof_obj.compute_center_of_mass(), (101.5, 1.5));
     assert_eq!(wof_obj.compute_md5(), "e965f294d0c0a5fe9e42a51285edbabd");
   }
 }
