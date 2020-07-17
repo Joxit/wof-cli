@@ -28,7 +28,7 @@ fn compute_diff(pts: &[Vec<f64>]) -> f64 {
 }
 
 #[inline]
-fn compute_area_geojson_polygon(polygon: Vec<Vec<Vec<f64>>>) -> f64 {
+fn compute_area_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
   let mut area = 0.;
   for (pos, polyline) in polygon.iter().enumerate() {
     if pos == 0 {
@@ -50,6 +50,15 @@ fn compute_centroid_polyline(polyline: &Vec<Vec<f64>>) -> (f64, f64, i64) {
     y += polyline[i][1];
   }
   (x, y, len as i64)
+}
+
+#[inline]
+fn compute_centroid_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> (f64, f64) {
+  let (x, y, len) = polygon.iter().fold((0., 0., 0), |pacc, part| {
+    let compute = compute_centroid_polyline(part);
+    (pacc.0 + compute.0, pacc.1 + compute.1, pacc.2 + compute.2)
+  });
+  return (x / (len as f64), y / (len as f64));
 }
 
 impl GeoCompute for Vec<f64> {
@@ -153,14 +162,14 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
     match geom_type {
       Some("Polygon") => {
         if let Some(polygon) = coords.as_geom_polygon() {
-          return compute_area_geojson_polygon(polygon);
+          return compute_area_geojson_polygon(&polygon);
         }
       }
       Some("MultiPolygon") => {
         if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
           let mut area = 0.;
           for polygon in multi_polygon {
-            area += compute_area_geojson_polygon(polygon);
+            area += compute_area_geojson_polygon(&polygon);
           }
           return area;
         }
@@ -247,23 +256,21 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
       }
       Some("Polygon") => {
         if let Some(polygon) = coords.as_geom_polygon() {
-          let (x, y, len) = polygon.iter().fold((0., 0., 0), |pacc, part| {
-            let compute = compute_centroid_polyline(part);
-            (pacc.0 + compute.0, pacc.1 + compute.1, pacc.2 + compute.2)
-          });
-          return (x / (len as f64), y / (len as f64));
+          return compute_centroid_polygon(&polygon)
         }
       }
       Some("MultiPolygon") => {
         if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
-          let (x, y, len) = multi_polygon.iter().fold((0., 0., 0), |acc, polygon| {
-            let fold = polygon.iter().fold((0., 0., 0), |pacc, part| {
-              let compute = compute_centroid_polyline(part);
-              (pacc.0 + compute.0, pacc.1 + compute.1, pacc.2 + compute.2)
-            });
-            (acc.0 + fold.0, acc.1 + fold.1, acc.2 + fold.2)
+          let total_area = self.compute_area();
+          let mut x: f64 = 0.0;
+          let mut y: f64 = 0.0;
+          multi_polygon.iter().for_each(|polygon| {
+            let area_frac = compute_area_geojson_polygon(polygon) / total_area;
+            let (px, py) = compute_centroid_polygon(polygon);
+            x = x + area_frac * px;
+            y = y + area_frac * py;
           });
-          return (x / (len as f64), y / (len as f64));
+          return (x, y);
         }
       }
       _ => {}
@@ -465,7 +472,7 @@ mod test {
     assert_eq!(wof_obj.compute_bbox_string(), "100.0,0.0,103.0,3.0");
     assert_eq!(
       wof_obj.compute_centroid(),
-      (101.16666666666667, 1.1666666666666667)
+      (101.71951219512195, 1.7195121951219487)
     );
     assert_eq!(wof_obj.compute_center_of_mass(), (101.5, 1.5));
     assert_eq!(wof_obj.compute_md5(), "e965f294d0c0a5fe9e42a51285edbabd");
