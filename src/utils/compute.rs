@@ -5,6 +5,7 @@ use md5;
 
 pub trait GeoCompute {
   fn compute_area(&self) -> f64;
+  fn compute_area_m(&self) -> f64;
   fn compute_bbox(&self) -> Vec<f64>;
   fn compute_md5(&self) -> String;
   fn compute_centroid(&self) -> (f64, f64);
@@ -41,6 +42,19 @@ fn compute_area_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
 }
 
 #[inline]
+fn compute_area_m_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
+  let polygon_m = polygon
+    .iter()
+    .map(|c| {
+      c.iter()
+        .map(crate::utils::proj::proj_4326_to_3410)
+        .collect()
+    })
+    .collect();
+  compute_area_geojson_polygon(&polygon_m)
+}
+
+#[inline]
 fn compute_centroid_polyline(polyline: &Vec<Vec<f64>>) -> (f64, f64, i64) {
   let mut x = 0.;
   let mut y = 0.;
@@ -66,6 +80,10 @@ impl GeoCompute for Vec<f64> {
     0.0
   }
 
+  fn compute_area_m(&self) -> f64 {
+    0.0
+  }
+
   fn compute_bbox(&self) -> Vec<f64> {
     vec![self[0], self[1], self[0], self[1]]
   }
@@ -88,6 +106,14 @@ impl GeoCompute for Vec<f64> {
 impl GeoCompute for Vec<Vec<f64>> {
   fn compute_area(&self) -> f64 {
     (self.windows(2).map(|pts| compute_diff(&pts)).sum::<f64>() / 2.0f64).abs()
+  }
+
+  fn compute_area_m(&self) -> f64 {
+    let coords: Vec<Vec<f64>> = self
+      .iter()
+      .map(crate::utils::proj::proj_4326_to_3410)
+      .collect();
+    coords.compute_area()
   }
 
   fn compute_bbox(&self) -> Vec<f64> {
@@ -179,6 +205,35 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
     0.
   }
 
+  fn compute_area_m(&self) -> f64 {
+    let geom_type = match self.geometry.get("type") {
+      Some(v) => v.as_str(),
+      _ => return 0.,
+    };
+    let coords = match self.geometry.get("coordinates") {
+      Some(c) => c,
+      _ => return 0.,
+    };
+    match geom_type {
+      Some("Polygon") => {
+        if let Some(polygon) = coords.as_geom_polygon() {
+          return compute_area_m_geojson_polygon(&polygon);
+        }
+      }
+      Some("MultiPolygon") => {
+        if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
+          let mut area = 0.;
+          for polygon in multi_polygon {
+            area += compute_area_m_geojson_polygon(&polygon);
+          }
+          return area;
+        }
+      }
+      _ => {}
+    }
+    0.
+  }
+
   fn compute_bbox(&self) -> Vec<f64> {
     let geom_type = match self.geometry.get("type") {
       Some(v) => v.as_str(),
@@ -256,7 +311,7 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
       }
       Some("Polygon") => {
         if let Some(polygon) = coords.as_geom_polygon() {
-          return compute_centroid_polygon(&polygon)
+          return compute_centroid_polygon(&polygon);
         }
       }
       Some("MultiPolygon") => {
@@ -425,7 +480,7 @@ mod test {
     };
     let wof_obj = crate::WOFGeoJSON::as_valid_wof_geojson(&json).unwrap();
     assert_eq!(wof_obj.compute_area(), 287.5);
-    // assert_eq!(wof_obj.compute_area_m(), 3332714287168.220703);
+    assert_eq!(wof_obj.compute_area_m(), 3332714287168.215); // from exportify 3332714287168.2207
     assert_eq!(wof_obj.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
     assert_eq!(wof_obj.compute_bbox_string(), "113.0,-27.0,154.0,-15.0");
     assert_eq!(wof_obj.compute_centroid(), (134.0, -19.75));
@@ -467,7 +522,7 @@ mod test {
     };
     let wof_obj = crate::WOFGeoJSON::as_valid_wof_geojson(&json).unwrap();
     assert_eq!(wof_obj.compute_area(), 1.6400000000000035);
-    // assert_eq!(wof_obj.compute_area_m(), 20266558929.082764);
+    assert_eq!(wof_obj.compute_area_m(), 20266558929.082684); // from exportify 20266558929.082764
     assert_eq!(wof_obj.compute_bbox(), vec![100.0, 0.0, 103.0, 3.0]);
     assert_eq!(wof_obj.compute_bbox_string(), "100.0,0.0,103.0,3.0");
     assert_eq!(
