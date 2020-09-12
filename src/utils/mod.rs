@@ -28,7 +28,8 @@ mod json;
 #[cfg(feature = "cli")]
 pub mod logger;
 mod path;
-pub mod proj;
+#[cfg(feature = "with-gdal")]
+mod gdal;
 #[cfg(feature = "cli")]
 pub mod result_exit;
 pub use crate::utils::compute::GeoCompute;

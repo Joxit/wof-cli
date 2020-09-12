@@ -3,6 +3,10 @@ use crate::utils::GeoJsonUtils;
 use json::JsonValue;
 use md5;
 
+const DEG_TO_RAD: f64 = 0.0174532925199432958;
+const SCALE_FACTOR: f64 = 0.866025403784438707610604524234;
+const TOTAL_SCALE_3410: f64 = 6371228.0;
+
 pub trait GeoCompute {
   fn compute_area(&self) -> f64;
   fn compute_area_m(&self) -> f64;
@@ -42,16 +46,35 @@ fn compute_area_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
 }
 
 #[inline]
+#[cfg(not(feature = "with-gdal"))]
 fn compute_area_m_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
   let polygon_m = polygon
     .iter()
-    .map(|c| {
-      c.iter()
-        .map(crate::utils::proj::proj_4326_to_3410)
-        .collect()
-    })
+    .map(|c| c.iter().map(proj_4326_to_3410).collect())
     .collect();
   compute_area_geojson_polygon(&polygon_m)
+}
+
+#[inline]
+#[cfg(not(feature = "with-gdal"))]
+fn compute_area_m_geojson_multi_polygon(multi_polygon: &Vec<Vec<Vec<Vec<f64>>>>) -> f64 {
+  let mut area = 0.;
+  for polygon in multi_polygon {
+    area += compute_area_m_geojson_polygon(&polygon);
+  }
+  area
+}
+
+#[inline]
+#[cfg(feature = "with-gdal")]
+fn compute_area_m_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
+  crate::utils::gdal::polygon_gdal_area_m(polygon)
+}
+
+#[inline]
+#[cfg(feature = "with-gdal")]
+fn compute_area_m_geojson_multi_polygon(multi_polygon: &Vec<Vec<Vec<Vec<f64>>>>) -> f64 {
+  crate::utils::gdal::multi_polygon_gdal_area_m(multi_polygon)
 }
 
 #[inline]
@@ -73,6 +96,22 @@ fn compute_centroid_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> (f64, f64) {
     (pacc.0 + compute.0, pacc.1 + compute.1, pacc.2 + compute.2)
   });
   return (x / (len as f64), y / (len as f64));
+}
+
+pub fn proj_4326_to_3410(coord: &Vec<f64>) -> Vec<f64> {
+  let mut lng = coord[0]; // x
+  let mut lat = coord[1]; // y
+
+  lng = lng * DEG_TO_RAD;
+  lat = lat * DEG_TO_RAD;
+
+  lng = lng * SCALE_FACTOR;
+  lat = lat.sin() / SCALE_FACTOR;
+
+  lng = lng * TOTAL_SCALE_3410;
+  lat = lat * TOTAL_SCALE_3410;
+
+  vec![lng, lat]
 }
 
 impl GeoCompute for Vec<f64> {
@@ -109,11 +148,7 @@ impl GeoCompute for Vec<Vec<f64>> {
   }
 
   fn compute_area_m(&self) -> f64 {
-    let coords: Vec<Vec<f64>> = self
-      .iter()
-      .map(crate::utils::proj::proj_4326_to_3410)
-      .collect();
-    coords.compute_area()
+    compute_area_m_geojson_polygon(&vec![self.clone()])
   }
 
   fn compute_bbox(&self) -> Vec<f64> {
@@ -222,11 +257,7 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
       }
       Some("MultiPolygon") => {
         if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
-          let mut area = 0.;
-          for polygon in multi_polygon {
-            area += compute_area_m_geojson_polygon(&polygon);
-          }
-          return area;
+          return compute_area_m_geojson_multi_polygon(&multi_polygon);
         }
       }
       _ => {}
@@ -452,6 +483,11 @@ mod test {
       vec![125.0, -15.0],
     ];
     assert_eq!(polygon.compute_area(), 287.5);
+    if cfg!(feature = "with-gdal") {
+      assert_eq!(polygon.compute_area_m(), 3332714287168.220703);
+    } else {
+      assert_eq!(polygon.compute_area_m(), 3332714287168.215);
+    }
     assert_eq!(polygon.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
     assert_eq!(polygon.compute_bbox_string(), "113.0,-27.0,154.0,-15.0");
     assert_eq!(polygon.compute_centroid(), (134.0, -19.75));
@@ -478,9 +514,14 @@ mod test {
       "bbox" => vec![113.0, -27.0, 154.0, -15.0],
       "id" => 0,
     };
+
     let wof_obj = crate::WOFGeoJSON::as_valid_wof_geojson(&json).unwrap();
     assert_eq!(wof_obj.compute_area(), 287.5);
-    assert_eq!(wof_obj.compute_area_m(), 3332714287168.215); // from exportify 3332714287168.2207
+    if cfg!(feature = "with-gdal") {
+      assert_eq!(wof_obj.compute_area_m(), 3332714287168.220703);
+    } else {
+      assert_eq!(wof_obj.compute_area_m(), 3332714287168.215);
+    }
     assert_eq!(wof_obj.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
     assert_eq!(wof_obj.compute_bbox_string(), "113.0,-27.0,154.0,-15.0");
     assert_eq!(wof_obj.compute_centroid(), (134.0, -19.75));
@@ -522,7 +563,11 @@ mod test {
     };
     let wof_obj = crate::WOFGeoJSON::as_valid_wof_geojson(&json).unwrap();
     assert_eq!(wof_obj.compute_area(), 1.6400000000000035);
-    assert_eq!(wof_obj.compute_area_m(), 20266558929.082684); // from exportify 20266558929.082764
+    if cfg!(feature = "with-gdal") {
+      assert_eq!(wof_obj.compute_area_m(), 20266558929.082764);
+    } else {
+      assert_eq!(wof_obj.compute_area_m(), 20266558929.082684);
+    }
     assert_eq!(wof_obj.compute_bbox(), vec![100.0, 0.0, 103.0, 3.0]);
     assert_eq!(wof_obj.compute_bbox_string(), "100.0,0.0,103.0,3.0");
     assert_eq!(

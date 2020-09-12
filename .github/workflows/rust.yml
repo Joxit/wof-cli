@@ -18,5 +18,7 @@ jobs:
       run: cargo build --verbose
     - name: Build with CLI feature
       run: cargo build --features cli --verbose
+    - name: Build with GDAL feature
+      run: cargo build --features with-gdal --verbose
     - name: Run tests
       run: cargo test --verbose

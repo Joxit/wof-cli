@@ -8,8 +8,10 @@ This project is both a CLI and a library to work with [Who's On First](https://w
 
 If you want the CLI, install it with [cargo](https://doc.rust-lang.org/cargo/):
 
+Gdal feature is usefull only for export feature because there is precision differences between GDAL C library and rust when I'm recalculating area in meter. 
+
 ```bash
-cargo install wof --force --features cli
+cargo install wof --force --features cli --features with-gdal
 ```
 
 ## CLI
