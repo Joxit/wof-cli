@@ -260,7 +260,7 @@ impl<'a> WOFGeoJSON<'a> {
     if lat != 0.0 {
       return lat;
     }
-    (self.get_min_lat() + ((self.get_max_lat() - self.get_min_lat()) / 2.0))
+    self.get_min_lat() + ((self.get_max_lat() - self.get_min_lat()) / 2.0)
   }
 
   pub fn get_lon(&self) -> f64 {
@@ -268,7 +268,7 @@ impl<'a> WOFGeoJSON<'a> {
     if lat != 0.0 {
       return lat;
     }
-    (self.get_min_lon() + ((self.get_max_lon() - self.get_min_lon()) / 2.0))
+    self.get_min_lon() + ((self.get_max_lon() - self.get_min_lon()) / 2.0)
   }
 
   pub fn get_min_lat(&self) -> f64 {

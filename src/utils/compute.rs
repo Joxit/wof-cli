@@ -1,3 +1,4 @@
+use crate::types::{MultiPolygon, Point, Polygon, Polyline};
 use crate::utils::FloatFormat;
 use crate::utils::GeoJsonUtils;
 use json::JsonValue;
@@ -28,12 +29,12 @@ pub trait GeoCompute {
 }
 
 #[inline]
-fn compute_diff(pts: &[Vec<f64>]) -> f64 {
+fn compute_diff(pts: &[Point]) -> f64 {
   (pts[1][0] - pts[0][0]) * (pts[1][1] + pts[0][1])
 }
 
 #[inline]
-fn compute_area_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
+fn compute_area_geojson_polygon(polygon: &Polygon) -> f64 {
   let mut area = 0.;
   for (pos, polyline) in polygon.iter().enumerate() {
     if pos == 0 {
@@ -47,7 +48,7 @@ fn compute_area_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
 
 #[inline]
 #[cfg(not(feature = "with-gdal"))]
-fn compute_area_m_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
+fn compute_area_m_geojson_polygon(polygon: &Polygon) -> f64 {
   let polygon_m = polygon
     .iter()
     .map(|c| c.iter().map(proj_4326_to_3410).collect())
@@ -57,28 +58,27 @@ fn compute_area_m_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
 
 #[inline]
 #[cfg(not(feature = "with-gdal"))]
-fn compute_area_m_geojson_multi_polygon(multi_polygon: &Vec<Vec<Vec<Vec<f64>>>>) -> f64 {
-  let mut area = 0.;
-  for polygon in multi_polygon {
-    area += compute_area_m_geojson_polygon(&polygon);
-  }
-  area
+fn compute_area_m_geojson_multi_polygon(multi_polygon: &MultiPolygon) -> f64 {
+  multi_polygon
+    .iter()
+    .map(compute_area_m_geojson_polygon)
+    .sum()
 }
 
 #[inline]
 #[cfg(feature = "with-gdal")]
-fn compute_area_m_geojson_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
+fn compute_area_m_geojson_polygon(polygon: &Polygon) -> f64 {
   crate::utils::gdal::polygon_gdal_area_m(polygon)
 }
 
 #[inline]
 #[cfg(feature = "with-gdal")]
-fn compute_area_m_geojson_multi_polygon(multi_polygon: &Vec<Vec<Vec<Vec<f64>>>>) -> f64 {
+fn compute_area_m_geojson_multi_polygon(multi_polygon: &MultiPolygon) -> f64 {
   crate::utils::gdal::multi_polygon_gdal_area_m(multi_polygon)
 }
 
 #[inline]
-fn compute_centroid_polyline(polyline: &Vec<Vec<f64>>) -> (f64, f64, i64) {
+fn compute_centroid_polyline(polyline: &Polyline) -> (f64, f64, i64) {
   let mut x = 0.;
   let mut y = 0.;
   let len = polyline.len() - 1;
@@ -90,7 +90,7 @@ fn compute_centroid_polyline(polyline: &Vec<Vec<f64>>) -> (f64, f64, i64) {
 }
 
 #[inline]
-fn compute_centroid_polygon(polygon: &Vec<Vec<Vec<f64>>>) -> (f64, f64) {
+fn compute_centroid_polygon(polygon: &Polygon) -> (f64, f64) {
   let (x, y, len) = polygon.iter().fold((0., 0., 0), |pacc, part| {
     let compute = compute_centroid_polyline(part);
     (pacc.0 + compute.0, pacc.1 + compute.1, pacc.2 + compute.2)
@@ -142,7 +142,7 @@ impl GeoCompute for Vec<f64> {
   }
 }
 
-impl GeoCompute for Vec<Vec<f64>> {
+impl GeoCompute for Polyline {
   fn compute_area(&self) -> f64 {
     (self.windows(2).map(|pts| compute_diff(&pts)).sum::<f64>() / 2.0f64).abs()
   }
@@ -228,11 +228,7 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
       }
       Some("MultiPolygon") => {
         if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
-          let mut area = 0.;
-          for polygon in multi_polygon {
-            area += compute_area_geojson_polygon(&polygon);
-          }
-          return area;
+          return multi_polygon.iter().map(compute_area_geojson_polygon).sum();
         }
       }
       _ => {}
@@ -396,10 +392,10 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
       }
       Some("MultiPolygon") => {
         if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
-          let mut coords: Vec<Vec<f64>> = multi_polygon
+          let mut coords: Polyline = multi_polygon
             .iter()
             .map(|polys| polys[0].clone()) // filter inner polygons
-            .collect::<Vec<Vec<Vec<f64>>>>()
+            .collect::<Polygon>()
             .concat(); // concat all polygons;
           coords.sort_by(|p1, p2| {
             let cmp = p1[0].partial_cmp(&p2[0]).unwrap();
@@ -410,7 +406,7 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
             }
           });
           coords.dedup();
-          let mut convex: Vec<Vec<f64>> = vec![coords[0].clone()];
+          let mut convex: Polyline = vec![coords[0].clone()];
           let left = &coords[0];
           let mut cur_pts = &coords[0];
           let mut next_pts = &coords[1];

@@ -1,7 +1,8 @@
+use crate::types::{MultiPolygon, Point, Polygon, Polyline};
 use gdal::spatial_ref::{CoordTransform, SpatialRef};
 use gdal::vector::{Geometry, OGRwkbGeometryType};
 
-fn polygon_to_gdal_geometry(polygon: &Vec<Vec<Vec<f64>>>) -> gdal::errors::Result<Geometry> {
+fn polygon_to_gdal_geometry(polygon: &Polygon) -> gdal::errors::Result<Geometry> {
   let mut geom = Geometry::empty(OGRwkbGeometryType::wkbPolygon)?;
   for linestring in polygon.iter() {
     let mut g = Geometry::empty(OGRwkbGeometryType::wkbLinearRing)?;
@@ -13,9 +14,7 @@ fn polygon_to_gdal_geometry(polygon: &Vec<Vec<Vec<f64>>>) -> gdal::errors::Resul
   Ok(geom)
 }
 
-fn multi_polygon_to_gdal_geometry(
-  multi_polygon: &Vec<Vec<Vec<Vec<f64>>>>,
-) -> gdal::errors::Result<Geometry> {
+fn multi_polygon_to_gdal_geometry(multi_polygon: &MultiPolygon) -> gdal::errors::Result<Geometry> {
   let mut geom = Geometry::empty(OGRwkbGeometryType::wkbMultiPolygon)?;
   for polygon in multi_polygon.iter() {
     let g = polygon_to_gdal_geometry(polygon)?;
@@ -24,7 +23,7 @@ fn multi_polygon_to_gdal_geometry(
   Ok(geom)
 }
 
-pub fn polygon_gdal_area_m(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
+pub fn polygon_gdal_area_m(polygon: &Polygon) -> f64 {
   let transform = CoordTransform::new(
     &SpatialRef::from_epsg(4326).unwrap(),
     &SpatialRef::from_epsg(3410).unwrap(),
@@ -38,7 +37,7 @@ pub fn polygon_gdal_area_m(polygon: &Vec<Vec<Vec<f64>>>) -> f64 {
     .area()
 }
 
-pub fn multi_polygon_gdal_area_m(multi_polygon: &Vec<Vec<Vec<Vec<f64>>>>) -> f64 {
+pub fn multi_polygon_gdal_area_m(multi_polygon: &MultiPolygon) -> f64 {
   let transform = CoordTransform::new(
     &SpatialRef::from_epsg(4326).unwrap(),
     &SpatialRef::from_epsg(3410).unwrap(),

@@ -24,12 +24,12 @@
 
 pub mod compute;
 mod float_format;
+#[cfg(feature = "with-gdal")]
+mod gdal;
 mod json;
 #[cfg(feature = "cli")]
 pub mod logger;
 mod path;
-#[cfg(feature = "with-gdal")]
-mod gdal;
 #[cfg(feature = "cli")]
 pub mod result_exit;
 pub use crate::utils::compute::GeoCompute;

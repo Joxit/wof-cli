@@ -1,3 +1,4 @@
+use crate::types::{MultiPolygon, Point, Polygon, Polyline};
 use crate::{JsonObject, JsonValue};
 
 /// Trait for JsonValue, it adds some useful features.
@@ -98,7 +99,7 @@ pub trait GeoJsonUtils {
   fn as_json_value(&self) -> &JsonValue;
   fn as_mut_json_value(&mut self) -> &mut JsonValue;
 
-  fn as_geom_point(&self) -> Option<Vec<f64>> {
+  fn as_geom_point(&self) -> Option<Point> {
     if !self.as_json_value().is_array() {
       return None;
     }
@@ -114,7 +115,7 @@ pub trait GeoJsonUtils {
     Some(point)
   }
 
-  fn as_geom_multi_point(&self) -> Option<Vec<Vec<f64>>> {
+  fn as_geom_multi_point(&self) -> Option<Vec<Point>> {
     if !self.as_json_value().is_array() {
       return None;
     }
@@ -130,11 +131,11 @@ pub trait GeoJsonUtils {
     Some(multi_point)
   }
 
-  fn as_geom_line(&self) -> Option<Vec<Vec<f64>>> {
+  fn as_geom_line(&self) -> Option<Polyline> {
     self.as_geom_multi_point()
   }
 
-  fn as_geom_multi_line(&self) -> Option<Vec<Vec<Vec<f64>>>> {
+  fn as_geom_multi_line(&self) -> Option<Vec<Polyline>> {
     if !self.as_json_value().is_array() {
       return None;
     }
@@ -150,11 +151,11 @@ pub trait GeoJsonUtils {
     Some(multi_line)
   }
 
-  fn as_geom_polygon(&self) -> Option<Vec<Vec<Vec<f64>>>> {
+  fn as_geom_polygon(&self) -> Option<Polygon> {
     self.as_geom_multi_line()
   }
 
-  fn as_geom_multi_polygon(&self) -> Option<Vec<Vec<Vec<Vec<f64>>>>> {
+  fn as_geom_multi_polygon(&self) -> Option<MultiPolygon> {
     if !self.as_json_value().is_array() {
       return None;
     }
