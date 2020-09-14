@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Install GDAL
+      run: sudo apt update && sudo apt install --no-install-recommends -y libgdal-dev
     - name: Build
       run: cargo build --verbose
     - name: Build with CLI feature

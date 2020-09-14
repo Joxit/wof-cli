@@ -12,10 +12,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Install GDAL
+      run: sudo apt update && sudo apt install --no-install-recommends -y libgdal-dev
     - name: Build
       run: cargo build
+    - name: Build with CLI feature
+      run: cargo build --features cli
+    - name: Build with GDAL feature
+      run: cargo build --features with-gdal
     - name: Run tests
       run: cargo test
+    - name: Run tests with GDAL
+      run: cargo test --features with-gdal
     - name: Publish
       env:
         CRATE_IO_ACCESS_TOKEN: ${{ secrets.CRATE_IO_ACCESS_TOKEN }}
