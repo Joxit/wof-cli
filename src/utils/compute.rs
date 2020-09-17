@@ -1,6 +1,5 @@
 use crate::types::{MultiPolygon, Point, Polygon, Polyline};
-use crate::utils::FloatFormat;
-use crate::utils::GeoJsonUtils;
+use crate::utils::{FloatFormat, GeoJsonUtils, JsonUtils};
 use json::JsonValue;
 use md5;
 
@@ -210,13 +209,13 @@ impl GeoCompute for Polyline {
   }
 }
 
-impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
+impl GeoCompute for json::object::Object {
   fn compute_area(&self) -> f64 {
-    let geom_type = match self.geometry.get("type") {
+    let geom_type = match self.get("type") {
       Some(v) => v.as_str(),
       _ => return 0.,
     };
-    let coords = match self.geometry.get("coordinates") {
+    let coords = match self.get("coordinates") {
       Some(c) => c,
       _ => return 0.,
     };
@@ -237,11 +236,11 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
   }
 
   fn compute_area_m(&self) -> f64 {
-    let geom_type = match self.geometry.get("type") {
+    let geom_type = match self.get("type") {
       Some(v) => v.as_str(),
       _ => return 0.,
     };
-    let coords = match self.geometry.get("coordinates") {
+    let coords = match self.get("coordinates") {
       Some(c) => c,
       _ => return 0.,
     };
@@ -262,11 +261,11 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
   }
 
   fn compute_bbox(&self) -> Vec<f64> {
-    let geom_type = match self.geometry.get("type") {
+    let geom_type = match self.get("type") {
       Some(v) => v.as_str(),
       _ => return vec![0., 0., 0., 0.],
     };
-    let coords = match self.geometry.get("coordinates") {
+    let coords = match self.get("coordinates") {
       Some(c) => c,
       _ => return vec![0., 0., 0., 0.],
     };
@@ -312,11 +311,11 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
   }
 
   fn compute_centroid(&self) -> (f64, f64) {
-    let geom_type = match self.geometry.get("type") {
+    let geom_type = match self.get("type") {
       Some(v) => v.as_str(),
       _ => return (0., 0.),
     };
-    let coords = match self.geometry.get("coordinates") {
+    let coords = match self.get("coordinates") {
       Some(c) => c,
       _ => return (0., 0.),
     };
@@ -361,11 +360,11 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
   }
 
   fn compute_center_of_mass(&self) -> (f64, f64) {
-    let geom_type = match self.geometry.get("type") {
+    let geom_type = match self.get("type") {
       Some(v) => v.as_str(),
       _ => return (0., 0.),
     };
-    let coords = match self.geometry.get("coordinates") {
+    let coords = match self.get("coordinates") {
       Some(c) => c,
       _ => return (0., 0.),
     };
@@ -444,7 +443,7 @@ impl<'a> GeoCompute for crate::WOFGeoJSON<'a> {
 
   fn compute_md5(&self) -> String {
     let mut result: Vec<u8> = vec![];
-    crate::object_to_writer(self.geometry, &mut result).unwrap();
+    crate::object_to_writer(self, &mut result).unwrap();
     let digest = md5::compute(result);
     format!("{:x}", digest)
   }
@@ -493,84 +492,74 @@ mod test {
   #[test]
   pub fn polygon_geojson() {
     let json = json::object! {
-      "type" => "Feature",
-      "properties" => json::object!{},
-      "geometry" => json::object!{
-        "coordinates" => vec![
-          vec![
-            vec![125.0, -15.0],
-            vec![144.0, -15.0],
-            vec![154.0, -27.0],
-            vec![113.0, -22.0],
-            vec![125.0, -15.0],
-          ],
+      "coordinates" => vec![
+        vec![
+          vec![125.0, -15.0],
+          vec![144.0, -15.0],
+          vec![154.0, -27.0],
+          vec![113.0, -22.0],
+          vec![125.0, -15.0],
         ],
-        "type" => "Polygon"
-      },
-      "bbox" => vec![113.0, -27.0, 154.0, -15.0],
-      "id" => 0,
+      ],
+      "type" => "Polygon"
     };
+    let obj = json.as_object().unwrap();
 
-    let wof_obj = crate::WOFGeoJSON::as_valid_wof_geojson(&json).unwrap();
-    assert_eq!(wof_obj.compute_area(), 287.5);
+    assert_eq!(obj.compute_area(), 287.5);
     if cfg!(feature = "with-gdal") {
-      assert_eq!(wof_obj.compute_area_m(), 3332714287168.220703);
+      assert_eq!(obj.compute_area_m(), 3332714287168.220703);
     } else {
-      assert_eq!(wof_obj.compute_area_m(), 3332714287168.215);
+      assert_eq!(obj.compute_area_m(), 3332714287168.215);
     }
-    assert_eq!(wof_obj.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
-    assert_eq!(wof_obj.compute_bbox_string(), "113.0,-27.0,154.0,-15.0");
-    assert_eq!(wof_obj.compute_centroid(), (134.0, -19.75));
-    assert_relative_eq(wof_obj.compute_center_of_mass(), (134.764058, -20.408116));
-    assert_eq!(wof_obj.compute_md5(), "1d113db66a333671083cf93919ed85b9");
+    assert_eq!(obj.compute_bbox(), vec![113.0, -27.0, 154.0, -15.0]);
+    assert_eq!(obj.compute_bbox_string(), "113.0,-27.0,154.0,-15.0");
+    assert_eq!(obj.compute_centroid(), (134.0, -19.75));
+    assert_relative_eq(obj.compute_center_of_mass(), (134.764058, -20.408116));
+    assert_eq!(obj.compute_md5(), "1d113db66a333671083cf93919ed85b9");
   }
 
   #[test]
   pub fn multi_polygon_geojson() {
     let json = json::object! {
-      "type" => "Feature",
-      "properties" => json::object!{},
-      "geometry" => json::object!{
-        "coordinates" => vec![
-          vec![vec![
-            vec![102.0, 2.0],
-            vec![103.0, 2.0],
-            vec![103.0, 3.0],
-            vec![102.0, 3.0],
-            vec![102.0, 2.0]]
-          ],
-          vec![vec![
-            vec![100.0, 0.0],
-            vec![101.0, 0.0],
-            vec![101.0, 1.0],
-            vec![100.0, 1.0],
-            vec![100.0, 0.0]],
-          vec![vec![100.2, 0.2],
-            vec![100.8, 0.2],
-            vec![100.8, 0.8],
-            vec![100.2, 0.8],
-            vec![100.2, 0.2]]
-          ]
+      "coordinates" => vec![
+        vec![vec![
+          vec![102.0, 2.0],
+          vec![103.0, 2.0],
+          vec![103.0, 3.0],
+          vec![102.0, 3.0],
+          vec![102.0, 2.0]]
         ],
-        "type" => "MultiPolygon"
-      },
-      "bbox" => vec![113.0, -27.0, 154.0, -15.0],
-      "id" => 0,
+        vec![vec![
+          vec![100.0, 0.0],
+          vec![101.0, 0.0],
+          vec![101.0, 1.0],
+          vec![100.0, 1.0],
+          vec![100.0, 0.0]],
+        vec![vec![100.2, 0.2],
+          vec![100.8, 0.2],
+          vec![100.8, 0.8],
+          vec![100.2, 0.8],
+          vec![100.2, 0.2]]
+        ]
+      ],
+      "type" => "MultiPolygon"
     };
-    let wof_obj = crate::WOFGeoJSON::as_valid_wof_geojson(&json).unwrap();
-    assert_eq!(wof_obj.compute_area(), 1.6400000000000035);
+
+    let obj = json.as_object().unwrap();
+
+    assert_eq!(obj.compute_area(), 1.6400000000000035);
     if cfg!(feature = "with-gdal") {
-      assert_eq!(wof_obj.compute_area_m(), 20266558929.082764);
+      assert_eq!(obj.compute_area_m(), 20266558929.082764);
     } else {
-      assert_eq!(wof_obj.compute_area_m(), 20266558929.082684);
+      assert_eq!(obj.compute_area_m(), 20266558929.082684);
     }
-    assert_eq!(wof_obj.compute_bbox(), vec![100.0, 0.0, 103.0, 3.0]);
-    assert_eq!(wof_obj.compute_bbox_string(), "100.0,0.0,103.0,3.0");
+    assert_eq!(obj.compute_bbox(), vec![100.0, 0.0, 103.0, 3.0]);
+    assert_eq!(obj.compute_bbox_string(), "100.0,0.0,103.0,3.0");
     assert_eq!(
-      wof_obj.compute_centroid(),
+      obj.compute_centroid(),
       (101.71951219512195, 1.7195121951219487)
     );
-    assert_eq!(wof_obj.compute_center_of_mass(), (101.5, 1.5));
-    assert_eq!(wof_obj.compute_md5(), "e965f294d0c0a5fe9e42a51285edbabd");
+    assert_eq!(obj.compute_center_of_mass(), (101.5, 1.5));
+    assert_eq!(obj.compute_md5(), "e965f294d0c0a5fe9e42a51285edbabd");
   }
 }
