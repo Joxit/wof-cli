@@ -29,6 +29,7 @@ mod wof;
 pub use self::wof::WOFGeoJSON;
 pub use json::object::Object as JsonObject;
 pub use json::JsonValue;
+pub mod export;
 pub mod repo;
 pub mod shapefile;
 pub mod types;

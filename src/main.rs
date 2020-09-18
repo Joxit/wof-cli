@@ -8,6 +8,7 @@ mod ser;
 pub use self::ser::*;
 mod de;
 pub use self::de::*;
+pub mod export;
 mod shapefile;
 mod sqlite;
 mod std;
