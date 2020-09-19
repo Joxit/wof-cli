@@ -1,4 +1,4 @@
-use crate::utils::{GeoCompute, JsonUtils};
+use crate::utils::{GeoCompute, GeoJsonUtils, JsonUtils};
 use json::JsonValue;
 
 pub fn export_json_value(json: JsonValue) -> Result<JsonValue, String> {
@@ -38,11 +38,48 @@ fn export_geometry(json: &JsonValue) -> Result<JsonValue, String> {
     .as_object()
     .unwrap()
     .get("geometry")
-    .ok_or(String::from(
-      "For WOF objects, `geometry` key is required as an object.",
-    ))?;
+    .ok_or(format!("`geometry` key is required."))?
+    .as_object()
+    .ok_or(format!("`geometry` key must be an object.",))?;
 
-  Ok(geometry)
+  let coordinates = obj
+    .get("coordinates")
+    .ok_or(format!("`coordinates` key is required."))?;
+  let _type = obj
+    .get("type")
+    .ok_or(format!("In `geometry`, `type` is required"))?;
+
+  if !coordinates.is_array() {
+    return Err(format!("`coordinates` key must be an array."));
+  }
+
+  let coords = match _type.as_str() {
+    Some("Point") => json::array!(coordinates
+      .as_geom_point()
+      .ok_or(format!("`coordinates` malformed for `type` Point."))?),
+    Some("MultiPoint") => json::array!(coordinates
+      .as_geom_multi_point()
+      .ok_or(format!("`coordinates` malformed for `type` MultiPoint."))?),
+    Some("LineString") => json::array!(coordinates
+      .as_geom_line()
+      .ok_or(format!("`coordinates` malformed for `type` LineString."))?),
+    Some("MultiLineString") => json::array!(coordinates.as_geom_multi_line().ok_or(format!(
+      "`coordinates` malformed for `type` MultiLineString."
+    ))?),
+    Some("Polygon") => json::array!(coordinates
+      .as_geom_polygon()
+      .ok_or(format!("`coordinates` malformed for `type` Polygon."))?),
+    Some("MultiPolygon") => json::array!(coordinates
+      .as_geom_multi_polygon()
+      .ok_or(format!("`coordinates` malformed for `type` MultiPolygon."))?),
+    Some(t) => return Err(format!("type {} is not supported.", t)),
+    None => return Err(format!("In `geometry`, `type` key is required.")),
+  };
+
+  Ok(json::object! {
+    "type" => _type.as_str().unwrap(),
+    "coordinates" => coords
+  })
 }
 
 fn export_id(json: &JsonValue) -> Result<i64, String> {
