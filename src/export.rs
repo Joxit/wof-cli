@@ -1,10 +1,11 @@
 use crate::utils::{GeoCompute, GeoJsonUtils, JsonUtils};
+use json::object::Object;
 use json::{array, JsonValue};
 
 pub fn export_json_value(json: JsonValue) -> Result<JsonValue, String> {
   json.assert_is_object()?;
   let geometry = export_geometry(&json)?;
-  let properties = export_porperties(&json)?;
+  let properties = export_porperties(&json, &geometry.as_object().unwrap())?;
   let id = export_id(&json)?;
   let bbox = export_bbox(&json)?;
 
@@ -17,7 +18,7 @@ pub fn export_json_value(json: JsonValue) -> Result<JsonValue, String> {
   })
 }
 
-fn export_porperties(json: &JsonValue) -> Result<JsonValue, String> {
+fn export_porperties(json: &JsonValue, geometry: &Object) -> Result<JsonValue, String> {
   let obj = json
     .as_object()
     .unwrap()
@@ -71,6 +72,28 @@ fn export_porperties(json: &JsonValue) -> Result<JsonValue, String> {
   if properties.get("wof:tags").is_none() {
     properties.insert("wof:tags", array![]);
   }
+  if properties.get("geom:area").is_none() {
+    properties.insert("geom:area", JsonValue::from(geometry.compute_area()));
+  }
+  if properties.get("geom:area_square_m").is_none() {
+    properties.insert(
+      "geom:area_square_m",
+      JsonValue::from(geometry.compute_area_m()),
+    );
+  }
+  if properties.get("geom:bbox").is_none() {
+    properties.insert("geom:bbox", JsonValue::from(geometry.compute_bbox_string()));
+  }
+  let (lng, lat) = geometry.compute_centroid();
+  if properties.get("geom:latitude").is_none() {
+    properties.insert("geom:latitude", JsonValue::from(lat));
+  }
+  if properties.get("geom:longitude").is_none() {
+    properties.insert("geom:longitude", JsonValue::from(lng));
+  }
+  if properties.get("wof:geomhash").is_none() {
+    properties.insert("wof:geomhash", JsonValue::from(geometry.compute_md5()));
+  }
 
   Ok(JsonValue::Object(properties))
 }
@@ -94,24 +117,36 @@ fn export_geometry(json: &JsonValue) -> Result<JsonValue, String> {
   }
 
   let coords = match _type.as_str() {
-    Some("Point") => json::array!(coordinates
-      .as_geom_point()
-      .ok_or("`coordinates` malformed for `type` Point.")?),
-    Some("MultiPoint") => json::array!(coordinates
-      .as_geom_multi_point()
-      .ok_or("`coordinates` malformed for `type` MultiPoint.")?),
-    Some("LineString") => json::array!(coordinates
-      .as_geom_line()
-      .ok_or("`coordinates` malformed for `type` LineString.")?),
-    Some("MultiLineString") => json::array!(coordinates
-      .as_geom_multi_line()
-      .ok_or("`coordinates` malformed for `type` MultiLineString.")?),
-    Some("Polygon") => json::array!(coordinates
-      .as_geom_polygon()
-      .ok_or("`coordinates` malformed for `type` Polygon.")?),
-    Some("MultiPolygon") => json::array!(coordinates
-      .as_geom_multi_polygon()
-      .ok_or("`coordinates` malformed for `type` MultiPolygon.")?),
+    Some("Point") => json::from(
+      coordinates
+        .as_geom_point()
+        .ok_or("`coordinates` malformed for `type` Point.")?,
+    ),
+    Some("MultiPoint") => json::from(
+      coordinates
+        .as_geom_multi_point()
+        .ok_or("`coordinates` malformed for `type` MultiPoint.")?,
+    ),
+    Some("LineString") => json::from(
+      coordinates
+        .as_geom_line()
+        .ok_or("`coordinates` malformed for `type` LineString.")?,
+    ),
+    Some("MultiLineString") => json::from(
+      coordinates
+        .as_geom_multi_line()
+        .ok_or("`coordinates` malformed for `type` MultiLineString.")?,
+    ),
+    Some("Polygon") => json::from(
+      coordinates
+        .as_geom_polygon()
+        .ok_or("`coordinates` malformed for `type` Polygon.")?,
+    ),
+    Some("MultiPolygon") => json::from(
+      coordinates
+        .as_geom_multi_polygon()
+        .ok_or("`coordinates` malformed for `type` MultiPolygon.")?,
+    ),
     Some(t) => return Err(format!("type {} is not supported.", t)),
     None => return Err(format!("In `geometry`, `type` key is required.")),
   };
@@ -123,12 +158,6 @@ fn export_geometry(json: &JsonValue) -> Result<JsonValue, String> {
 }
 
 fn export_id(json: &JsonValue) -> Result<i64, String> {
-  if let Some(id) = json.as_object().unwrap().get("id") {
-    if id.is_number() {
-      return Ok(id.as_i64().unwrap());
-    }
-  }
-
   let properties = json.as_object().unwrap().get("properties").unwrap();
   if let Some(id) = properties.as_object().unwrap().get("wof:id") {
     if id.is_number() {
