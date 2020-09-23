@@ -155,9 +155,14 @@ where
       let force = self.key == String::from("coordinates")
         || self.key == String::from("bbox")
         || self.key == String::from("geom:area")
+        || self.key == String::from("geom:area_square_m")
         || self.key == String::from("geom:latitude")
         || self.key == String::from("geom:longitude");
-      write!(self.writer, "{}", num.as_parts().fmt_with_decimal(force))
+      write!(
+        self.writer,
+        "{}",
+        num.as_parts().with_precision(6).fmt_with_decimal(force)
+      )
     }
   }
 }

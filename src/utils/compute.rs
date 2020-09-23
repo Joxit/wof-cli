@@ -1,5 +1,5 @@
 use crate::types::{MultiPolygon, Point, Polygon, Polyline};
-use crate::utils::{FloatFormat, GeoJsonUtils, JsonUtils};
+use crate::utils::{FloatFormat, GeoJsonUtils};
 use json::JsonValue;
 use md5;
 
@@ -452,6 +452,7 @@ impl GeoCompute for json::object::Object {
 #[cfg(test)]
 mod test {
   use super::*;
+  use crate::utils::JsonUtils;
 
   fn assert_relative_eq(a: (f64, f64), b: (f64, f64)) {
     assert_eq!(a.0 > b.0 - 0.000001 && a.0 < b.0 + 0.000001, true);
