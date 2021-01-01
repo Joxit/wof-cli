@@ -14,7 +14,7 @@ pub struct Print {
   /// Remove the geometry before pretty print.
   #[structopt(long = "no-geom")]
   pub no_geom: bool,
-  /// Remove the geometry before pretty print.
+  /// Print minified json.
   #[structopt(long = "no-pretty")]
   pub no_pretty: bool,
   /// Send the raw data, do not pretty print it. You can't use filters with this.
