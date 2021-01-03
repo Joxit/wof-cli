@@ -30,6 +30,8 @@ pub struct SQLiteOpts {
   pub ancestors: bool,
   /// If true, will add documents in concordances table.
   pub concordances: bool,
+  /// If true, will add alternative geometries in geojson table.
+  pub alt: bool,
 }
 
 impl SQLite {
@@ -139,6 +141,10 @@ impl SQLite {
   }
 
   fn add_to_geojson(&self, doc: &WOFGeoJSON) -> Result<(), SQLiteError> {
+    if doc.is_alt_geom() && !self.opts.alt {
+      return Ok(());
+    }
+
     let mut input: Vec<u8> = Vec::new();
     if let Ok(_) = if self.opts.pretty {
       doc.pretty(&mut input)
@@ -244,9 +250,18 @@ impl SQLite {
   }
 
   pub fn write_all_ids<W: Write>(&self, mut writer: &mut W) -> Result<(), String> {
+    let sql = if self.opts.alt && self.opts.deprecated {
+      statements::SELECT_ALL_IDS_WITHOUT_ALT_AND_DEPRECATED
+    } else if self.opts.alt {
+      statements::SELECT_ALL_IDS_WITHOUT_ALT
+    } else if self.opts.deprecated {
+      statements::SELECT_ALL_IDS_WITHOUT_DEPRECATED
+    } else {
+      statements::SELECT_ALL_IDS
+    };
     let mut stmt = self
       .conn
-      .prepare(statements::SELECT_ALL_IDS)
+      .prepare(sql)
       .stringify_err("Can't get table geojson")?;
 
     let rows = stmt
@@ -263,9 +278,18 @@ impl SQLite {
   }
 
   pub fn write_all_geojsons<W: Write>(&self, mut writer: &mut W) -> Result<(), String> {
+    let sql = if self.opts.alt && self.opts.deprecated {
+      statements::SELECT_ALL_GEOJSONS_WITHOUT_ALT_AND_DEPRECATED
+    } else if self.opts.alt {
+      statements::SELECT_ALL_GEOJSONS_WITHOUT_ALT
+    } else if self.opts.deprecated {
+      statements::SELECT_ALL_GEOJSONS_WITHOUT_DEPRECATED
+    } else {
+      statements::SELECT_ALL_GEOJSONS
+    };
     let mut stmt = self
       .conn
-      .prepare(statements::SELECT_ALL_GEOJSONS)
+      .prepare(sql)
       .stringify_err("Can't get table geojson")?;
 
     let rows = stmt
@@ -294,6 +318,7 @@ impl Default for SQLiteOpts {
       names: true,
       ancestors: true,
       concordances: true,
+      alt: true,
     }
   }
 }

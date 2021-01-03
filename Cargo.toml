@@ -44,7 +44,7 @@ features = ["vendored-openssl"]
 optional = true
 
 [dependencies.rusqlite]
-version = "^0.21.0"
+version = "^0.24.2"
 features = ["bundled"]
 
 [features]
