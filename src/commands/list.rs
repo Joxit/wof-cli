@@ -1,6 +1,8 @@
 use crate::repo::Walk;
+use crate::sqlite;
 use crate::utils::ResultExit;
 use std::io::{Read, Write};
+use std::path::Path;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -22,11 +24,15 @@ pub struct List {
 impl List {
   pub fn exec(&self) {
     for directory in &self.directories {
-      self.wak_directory(directory)
+      if Path::new(directory).is_dir() {
+        self.walk_directory(directory)
+      } else {
+        self.list_sqlite(directory)
+      }
     }
   }
 
-  pub fn wak_directory(&self, directory: &String) {
+  pub fn walk_directory(&self, directory: &String) {
     for entry in Walk::new(directory.to_string(), self.alt, !self.no_deprecated) {
       if let Ok(path) = entry {
         if self.print_geojson {
@@ -40,6 +46,29 @@ impl List {
           writeln!(std::io::stdout(), "{}", path.path().display()).exit_silently();
         }
       }
+    }
+  }
+
+  pub fn list_sqlite(&self, directory: &String) {
+    let sqlite = sqlite::SQLite::new(
+      directory,
+      sqlite::SQLiteOpts {
+        pretty: false,
+        deprecated: !self.no_deprecated,
+        alt: self.alt,
+        ..Default::default()
+      },
+    )
+    .expect_exit("Can't open the database");
+
+    if self.print_geojson {
+      sqlite
+        .write_all_geojsons(&mut std::io::stdout())
+        .expect_exit("Can't write to stdout");
+    } else {
+      sqlite
+        .write_all_ids(&mut std::io::stdout())
+        .expect_exit("Can't write to stdout");
     }
   }
 }
