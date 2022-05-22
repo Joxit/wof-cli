@@ -1,7 +1,9 @@
 use crate::std::StringifyError;
 use crate::utils::GeoJsonUtils;
 use crate::wof::WOFGeoJSON;
+use dbase::{FieldValue, Record, TableWriterBuilder};
 use shapefile::*;
+use std::convert::TryInto;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
@@ -9,9 +11,6 @@ use std::path::Path;
 pub struct Shapefile {
   writer: Writer<BufWriter<File>>,
   opts: ShapefileOpts,
-  polygons: Vec<Polygon>,
-  points: Vec<Point>,
-  polylines: Vec<Polyline>,
 }
 
 /// Options for the database, default values are the official configuration.
@@ -32,12 +31,13 @@ pub enum ShapeType {
 impl Shapefile {
   /// Create a new shapefile, the parent folder should exists.
   pub fn new<P: AsRef<Path>>(path: P, opts: ShapefileOpts) -> Result<Self, String> {
+    let table_builder = TableWriterBuilder::new()
+      .add_character_field("id".try_into().unwrap(), 15)
+      .add_character_field("name".try_into().unwrap(), 50)
+      .add_character_field("placetype".try_into().unwrap(), 15);
     Ok(Self {
-      writer: Writer::from_path(path).stringify_err("Can't create the shapefile")?,
+      writer: Writer::from_path(path, table_builder).stringify_err("Can't create the shapefile")?,
       opts: opts,
-      polygons: vec![],
-      points: vec![],
-      polylines: vec![],
     })
   }
 
@@ -57,7 +57,10 @@ impl Shapefile {
           return Ok(());
         }
         if let Some(point) = coords.as_geom_point() {
-          self.points.push(coords_to_point(&point));
+          self
+            .writer
+            .write_shape_and_record(&coords_to_point(&point), &self.get_record(&wof_obj))
+            .stringify_err("Something goes wrong when adding points to the shapefile")?;
         }
       }
       Some("LineString") => {
@@ -65,7 +68,10 @@ impl Shapefile {
           return Ok(());
         }
         if let Some(polyline) = coords.as_geom_line() {
-          self.polylines.push(coords_to_polyline(&polyline));
+          self
+            .writer
+            .write_shape_and_record(&coords_to_polyline(&polyline), &self.get_record(&wof_obj))
+            .stringify_err("Something goes wrong when adding points to the shapefile")?;
         }
       }
       Some("MultiLineString") => {
@@ -73,7 +79,13 @@ impl Shapefile {
           return Ok(());
         }
         if let Some(polyline) = coords.as_geom_multi_line() {
-          self.polylines.push(coords_to_multi_polyline(&polyline));
+          self
+            .writer
+            .write_shape_and_record(
+              &coords_to_multi_polyline(&polyline),
+              &self.get_record(&wof_obj),
+            )
+            .stringify_err("Something goes wrong when adding points to the shapefile")?;
         }
       }
       Some("Polygon") => {
@@ -81,7 +93,10 @@ impl Shapefile {
           return Ok(());
         }
         if let Some(polygon) = coords.as_geom_polygon() {
-          self.polygons.push(coords_to_polygon(&polygon));
+          self
+            .writer
+            .write_shape_and_record(&coords_to_polygon(&polygon), &self.get_record(&wof_obj))
+            .stringify_err("Something goes wrong when adding points to the shapefile")?;
         }
       }
       Some("MultiPolygon") => {
@@ -89,7 +104,13 @@ impl Shapefile {
           return Ok(());
         }
         if let Some(multi_polygon) = coords.as_geom_multi_polygon() {
-          self.polygons.push(coords_to_multi_polygon(&multi_polygon));
+          self
+            .writer
+            .write_shape_and_record(
+              &coords_to_multi_polygon(&multi_polygon),
+              &self.get_record(&wof_obj),
+            )
+            .stringify_err("Something goes wrong when adding points to the shapefile")?;
         }
       }
       Some(s) => return Err(format!("Not implemented for {}", s)),
@@ -98,21 +119,21 @@ impl Shapefile {
     Ok(())
   }
 
-  pub fn write(mut self) -> Result<(), String> {
-    match self.opts.shapetype {
-      ShapeType::Point => self
-        .writer
-        .write_shapes(&self.points)
-        .stringify_err("Something goes wrong when adding points to the shapefile"),
-      ShapeType::Polyline => self
-        .writer
-        .write_shapes(&self.polylines)
-        .stringify_err("Something goes wrong when adding polylines to the shapefile"),
-      ShapeType::Polygon => self
-        .writer
-        .write_shapes(&self.polygons)
-        .stringify_err("Something goes wrong when adding polygons to the shapefile"),
-    }
+  fn get_record(&self, wof_obj: &WOFGeoJSON) -> Record {
+    let mut record = Record::default();
+    record.insert(
+      "id".to_string(),
+      FieldValue::Character(Some(wof_obj.id.to_string())),
+    );
+    record.insert(
+      "name".to_string(),
+      FieldValue::Character(Some(wof_obj.get_name())),
+    );
+    record.insert(
+      "placetype".to_string(),
+      FieldValue::Character(Some(wof_obj.get_placetype())),
+    );
+    record
   }
 }
 

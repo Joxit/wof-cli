@@ -101,10 +101,6 @@ impl Shapefile {
       }
     }
 
-    shapefile
-      .write()
-      .expect_exit("Something goes wrong when writing shapes.");
-
     if self.timings {
       info!(
         "Import finished successfully in {:?}.",
