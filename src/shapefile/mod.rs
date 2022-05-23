@@ -4,7 +4,7 @@ use crate::wof::WOFGeoJSON;
 use dbase::{FieldValue, Record, TableWriterBuilder};
 use shapefile::*;
 use std::convert::TryInto;
-use std::fs::File;
+use std::fs::{write, File};
 use std::io::BufWriter;
 use std::path::Path;
 
@@ -35,8 +35,12 @@ impl Shapefile {
       .add_character_field("id".try_into().unwrap(), 15)
       .add_character_field("name".try_into().unwrap(), 50)
       .add_character_field("placetype".try_into().unwrap(), 15);
+    let shp_path = path.as_ref().to_path_buf().with_extension("shp");
+    let prj_path = shp_path.with_extension("prj");
+    write(prj_path, r#"GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]"#).stringify_err("Can't write projection file")?;
     Ok(Self {
-      writer: Writer::from_path(path, table_builder).stringify_err("Can't create the shapefile")?,
+      writer: Writer::from_path(shp_path, table_builder)
+        .stringify_err("Can't create the shapefile")?,
       opts: opts,
     })
   }
