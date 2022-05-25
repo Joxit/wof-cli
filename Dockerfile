@@ -1,4 +1,4 @@
-FROM rust:1-slim-buster as rust-builder
+FROM rust:1-slim-bullseye as rust-builder
 
 WORKDIR /opt/rust/wof
 RUN apt-get update \
@@ -8,14 +8,14 @@ RUN cargo fetch
 COPY src src
 RUN cargo build --release --features cli
 
-FROM python:2-buster as python-builder
+FROM python:3-bullseye as python-builder
 COPY --from=rust-builder /opt/rust/wof/target/release/wof /bin/
 RUN wof install export
 
-FROM debian:buster
+FROM debian:bullseye
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends python2 ca-certificates \
+    && apt-get install -y --no-install-recommends python3 ca-certificates \
     && mkdir /root/.wof \
-    && ln -s /usr/bin/python2 /usr/local/bin/python
+    && ln -s /usr/bin/python3 /usr/local/bin/python
 COPY --from=rust-builder /opt/rust/wof/target/release/wof /bin/
 COPY --from=python-builder /root/.wof /root/.wof
