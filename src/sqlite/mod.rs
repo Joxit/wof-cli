@@ -1,9 +1,10 @@
 //! Module to create and add documents to WOF SQLites databases.
 use crate::std::StringifyError;
 use crate::wof::WOFGeoJSON;
-use rusqlite::{params, Connection, Error as SQLiteError, NO_PARAMS};
+use rusqlite::{params, Connection, Error as SQLiteError};
 use std::io::Write;
 use std::path::Path;
+use json::JsonValue;
 mod statements;
 
 /// SQLite structure, own a connection to the database with options.
@@ -265,7 +266,7 @@ impl SQLite {
       .stringify_err("Can't get table geojson")?;
 
     let rows = stmt
-      .query_map(NO_PARAMS, |row| {
+      .query_map([], |row| {
         let res: i64 = row.get(0).unwrap();
         Ok(res)
       })
@@ -293,7 +294,7 @@ impl SQLite {
       .stringify_err("Can't get table geojson")?;
 
     let rows = stmt
-      .query_map(NO_PARAMS, |row| {
+      .query_map([], |row| {
         let res: Vec<u8> = row.get(0).unwrap();
         Ok(res)
       })
@@ -305,6 +306,28 @@ impl SQLite {
       writeln!(&mut writer, "").stringify_err("Can't write to output")?;
     }
     Ok(())
+  }
+
+  pub fn get_geojson_by_id(&self, id: i64) -> Result<Option<JsonValue>, String> {
+    let mut stmt = self
+      .conn
+      .prepare(statements::SELECT_GEOJSON_BY_ID)
+      .stringify_err("Can't get table geojson")?;
+
+    let mut rows = stmt
+      .query_map(params![id], |row| {
+        let res: Vec<u8> = row.get(0).unwrap();
+        Ok(res)
+      })
+      .stringify_err("Can't get rows of table geojson")?;
+
+    if let Some(body) = rows.next() {
+      let body = std::str::from_utf8(&body.unwrap()).unwrap().to_string();
+      let json = crate::parse_string_to_json(body).stringify_err("Can't parse geojson body")?;
+      Ok(Some(json))
+    } else {
+      Ok(None)
+    }
   }
 }
 
