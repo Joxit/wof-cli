@@ -36,7 +36,8 @@ pub use crate::utils::compute::GeoCompute;
 pub use crate::utils::float_format::FloatFormat;
 pub use crate::utils::json::{GeoJsonUtils, JsonUtils};
 pub use crate::utils::path::{
-  id_to_data_path_folder, id_to_data_path_geojson, id_to_path_folder, id_to_path_geojson,
+  get_geojson_path_from_id, id_to_data_path_folder, id_to_data_path_geojson, id_to_path_folder,
+  id_to_path_geojson,
 };
 #[cfg(feature = "cli")]
 pub use crate::utils::result_exit::ResultExit;

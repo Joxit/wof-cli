@@ -4,6 +4,7 @@ use crate::commands::export::Export;
 use crate::commands::fetch::Fetch;
 use crate::commands::install::Install;
 use crate::commands::list::List;
+use crate::commands::patch::Patch;
 use crate::commands::print::Print;
 use crate::std::StringifyError;
 use crate::utils::ResultExit;
@@ -20,6 +21,7 @@ mod export;
 mod fetch;
 mod install;
 mod list;
+mod patch;
 mod print;
 
 #[derive(Debug, StructOpt)]
@@ -39,6 +41,9 @@ pub enum Command {
   /// Fetch WOF data from github.
   #[structopt(name = "fetch")]
   Fetch(Fetch),
+  /// Patch WOF documents with json. Can be via stdin or cmd argument.
+  #[structopt(name = "patch")]
+  Patch(Patch),
   /// Print to stdout WOF document by id. Can be via stdin or cmd argument.
   #[structopt(name = "print")]
   Print(Print),
@@ -59,6 +64,7 @@ impl Command {
       Command::Install(executable) => executable.exec(),
       Command::Completion(executable) => executable.exec(),
       Command::Fetch(executable) => executable.exec(),
+      Command::Patch(executable) => executable.exec(),
       Command::Print(executable) => executable.exec(),
       Command::List(executable) => executable.exec(),
       Command::Build(executable) => executable.exec(),

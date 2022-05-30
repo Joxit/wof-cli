@@ -24,6 +24,16 @@ impl Walk {
     }
   }
 
+  pub fn json_or_geojson<P: AsRef<Path>>(directory: P) -> Self {
+    Walk {
+      walker: WalkDir::new(directory).into_iter(),
+      with_alt: true,
+      with_deprecated: true,
+      geojson_regex: Regex::new(r"\.(geojson|json)$").unwrap(),
+      alt_regex: Regex::new(r"^\d+-alt.*\.(geojson|json)$").unwrap(),
+    }
+  }
+
   fn should_skip<P: AsRef<Path>>(&self, path: P) -> std::result::Result<bool, String> {
     if !self.with_deprecated {
       let json = crate::parse_file_to_json(path)?;

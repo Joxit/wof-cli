@@ -1,10 +1,10 @@
 //! Module to create and add documents to WOF SQLites databases.
 use crate::std::StringifyError;
 use crate::wof::WOFGeoJSON;
+use json::JsonValue;
 use rusqlite::{params, Connection, Error as SQLiteError};
 use std::io::Write;
 use std::path::Path;
-use json::JsonValue;
 mod statements;
 
 /// SQLite structure, own a connection to the database with options.

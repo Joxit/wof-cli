@@ -5,7 +5,6 @@ use crate::utils::{self, JsonUtils};
 use json::JsonValue;
 use log::error;
 use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
 use std::string::String;
 use structopt::StructOpt;
 
@@ -43,7 +42,9 @@ impl Print {
     };
     for id in &self.ids {
       if let Some(ref db) = sqlite {
-        let id = id.parse::<i64>().expect_exit(&format!("{} is not a number", id));
+        let id = id
+          .parse::<i64>()
+          .expect_exit(&format!("{} is not a number", id));
         self.print_from_database(&db, id);
       } else {
         self.print_from_string(&id);
@@ -60,7 +61,9 @@ impl Print {
         Ok(_) => {
           let id = input.trim().to_string();
           if let Some(ref db) = sqlite {
-            let id = id.parse::<i64>().expect_exit(&format!("{} is not a number", id));
+            let id = id
+              .parse::<i64>()
+              .expect_exit(&format!("{} is not a number", id));
             self.print_from_database(&db, id);
           } else {
             self.print_from_string(&id);
@@ -72,8 +75,7 @@ impl Print {
   }
 
   fn print_from_string(&self, id: &String) {
-    let path = Print::get_path(&id);
-    if path.exists() && !path.is_dir() {
+    if let Some(path) = utils::get_geojson_path_from_id(".", id) {
       let mut file =
         std::fs::File::open(path).expect_exit(format!("Can't open id {}", id).as_str());
       let message_error = format!("Something goes wrong when printing {}", id);
@@ -94,7 +96,9 @@ impl Print {
 
   fn print_from_database(&self, sqlite: &SQLite, id: i64) {
     let message_error = format!("Something goes wrong when printing {}", id);
-    let json = sqlite.get_geojson_by_id(id).expect_exit(message_error.as_str());
+    let json = sqlite
+      .get_geojson_by_id(id)
+      .expect_exit(message_error.as_str());
     if let Some(mut json) = json {
       self.print_json(&mut json, &message_error)
     } else {
@@ -130,21 +134,5 @@ impl Print {
       json_to_writer(&json, &mut std::io::stdout()).expect_exit(message_error.as_str());
       writeln!(std::io::stdout(), "").expect_exit(message_error.as_str());
     }
-  }
-
-  fn get_path(id: &String) -> PathBuf {
-    let path = utils::id_to_data_path_geojson(id);
-    if path.exists() && !path.is_dir() {
-      return path;
-    }
-    let path = utils::id_to_path_geojson(id);
-    if path.exists() && !path.is_dir() {
-      return path;
-    }
-    let path = Path::new("data").join(id);
-    if path.exists() && !path.is_dir() {
-      return path;
-    }
-    Path::new(id).to_path_buf()
   }
 }

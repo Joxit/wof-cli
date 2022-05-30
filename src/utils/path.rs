@@ -54,6 +54,38 @@ pub fn id_to_data_path_geojson<T: ToString>(id: T) -> PathBuf {
   Path::new("data").join(id_to_path_geojson(id))
 }
 
+/// Returns an existing geojson path from a base directory
+pub fn get_geojson_path_from_id<P: AsRef<Path>, T: ToString>(
+  base_directory: P,
+  id: T,
+) -> Option<PathBuf> {
+  let path = base_directory
+    .as_ref()
+    .join(id_to_data_path_geojson(id.to_string()));
+  if path.exists() && !path.is_dir() {
+    return Some(path);
+  }
+  let path = base_directory
+    .as_ref()
+    .join(id_to_path_geojson(id.to_string()));
+  if path.exists() && !path.is_dir() {
+    return Some(path);
+  }
+  let path = base_directory
+    .as_ref()
+    .join(Path::new("data").join(id.to_string()));
+  if path.exists() && !path.is_dir() {
+    return Some(path);
+  }
+  let path = base_directory
+    .as_ref()
+    .join(Path::new(&id.to_string()).to_path_buf());
+  if path.exists() && !path.is_dir() {
+    return Some(path);
+  }
+  None
+}
+
 #[cfg(test)]
 mod test_id_to_path_folder {
   use super::*;
