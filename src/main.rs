@@ -9,6 +9,7 @@ pub use self::ser::*;
 mod de;
 pub use self::de::*;
 pub mod export;
+mod postgres;
 mod shapefile;
 mod sqlite;
 mod std;
