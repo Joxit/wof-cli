@@ -1,17 +1,15 @@
-use crate::repo::Walk;
 use crate::shapefile;
 use crate::utils::ResultExit;
 use crate::wof::WOFGeoJSON;
 use crate::JsonValue;
 use log::{error, info};
 use std::path::Path;
-use std::time::SystemTime;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 pub struct Shapefile {
   #[structopt(default_value = ".")]
-  pub directory: String,
+  pub directories: Vec<String>,
   /// Include only records that belong to this ID. You may pass multiple -belongs-to flags.
   #[structopt(long = "belongs-to")]
   pub belongs_to: Option<Vec<i32>>,
@@ -71,44 +69,16 @@ impl Shapefile {
     .expect_exit("Can't open the shapefile.");
 
     info!("Create a shapefile with {:?}", shapetype);
-    let import_start = SystemTime::now();
 
-    if crate::commands::input_pipe() {
-      info!("Start import from stdin.");
-      loop {
-        let mut buffer = String::new();
-        match std::io::stdin().read_line(&mut buffer) {
-          Ok(0) => break,
-          Ok(_) => {
-            if let Err(e) = self.add_string(&mut shapefile, buffer) {
-              error!("Something goes wrong with an entry from stdin: {}", e);
-            }
-          }
-          Err(_) => break,
-        }
+    crate::commands::build::build_database(&self.directories, self.timings, &mut |buffer, file| {
+      if let Some(buffer) = buffer {
+        self.add_string(&mut shapefile, buffer)
+      } else if let Some(file) = file {
+        self.add_file(&mut shapefile, file)
+      } else {
+        Ok(())
       }
-    } else {
-      info!(
-        "Start import for directory `{}`",
-        self.directory.to_string()
-      );
-      for entry in Walk::new(self.directory.to_string(), false, true) {
-        if let Ok(path) = entry {
-          if let Err(e) = self.add_file(&mut shapefile, path.path()) {
-            error!("Something goes wrong for {}: {}", path.path().display(), e);
-          }
-        }
-      }
-    }
-
-    if self.timings {
-      info!(
-        "Import finished successfully in {:?}.",
-        import_start.elapsed().unwrap()
-      );
-    } else {
-      info!("Import finished successfully.");
-    }
+    });
   }
 
   fn add_file<P: AsRef<Path>>(

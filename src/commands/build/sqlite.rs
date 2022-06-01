@@ -1,10 +1,8 @@
 use crate::commands::assert_directory_exists;
-use crate::repo::Walk;
 use crate::sqlite;
 use crate::utils::ResultExit;
-use log::{error, info};
+use log::info;
 use std::path::Path;
-use std::time::SystemTime;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -68,50 +66,14 @@ impl SQLite {
     info!("Creating tables and indexes.");
     sqlite.create_tables().expect_exit("Can't create tables");
 
-    let import_start = SystemTime::now();
-
-    if crate::commands::input_pipe() {
-      info!("Start import from stdin.");
-      loop {
-        let mut buffer = String::new();
-        match std::io::stdin().read_line(&mut buffer) {
-          Ok(0) => break,
-          Ok(_) => {
-            if let Err(e) = sqlite.add_string(buffer) {
-              error!("Something goes wrong with an entry from stdin: {}", e);
-            }
-          }
-          Err(_) => break,
-        }
+    crate::commands::build::build_database(&self.directories, self.timings, &mut |buffer, file| {
+      if let Some(buffer) = buffer {
+        sqlite.add_string(buffer)
+      } else if let Some(file) = file {
+        sqlite.add_file(file)
+      } else {
+        Ok(())
       }
-    } else {
-      for directory in &self.directories {
-        info!("Start import for directory `{}`", directory);
-        let start = SystemTime::now();
-        for entry in Walk::new(directory.to_string(), false, true) {
-          if let Ok(path) = entry {
-            if let Err(e) = sqlite.add_file(path.path()) {
-              error!("Something goes wrong for {}: {}", path.path().display(), e);
-            }
-          }
-        }
-        if self.timings {
-          info!(
-            "Import for `{}` took {:?}.",
-            directory,
-            start.elapsed().unwrap()
-          );
-        }
-      }
-    }
-
-    if self.timings {
-      info!(
-        "Import finished successfully in {:?}.",
-        import_start.elapsed().unwrap()
-      );
-    } else {
-      info!("Import finished successfully.");
-    }
+    });
   }
 }
