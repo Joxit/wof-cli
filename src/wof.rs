@@ -256,17 +256,23 @@ impl<'a> WOFGeoJSON<'a> {
   }
 
   pub fn get_lat(&self) -> f64 {
-    let lat = self.get_as_f64_or_else("wof:latitude", 0.0);
-    if lat != 0.0 {
+    let lat = vec!["wof:latitude", "geom:latitude"]
+      .iter()
+      .map(|e| self.get_as_f64_or_else(e, 0.0))
+      .find(|e|*e != 0.0);
+    if let Some(lat) = lat {
       return lat;
     }
     self.get_min_lat() + ((self.get_max_lat() - self.get_min_lat()) / 2.0)
   }
 
   pub fn get_lon(&self) -> f64 {
-    let lat = self.get_as_f64_or_else("wof:longitude", 0.0);
-    if lat != 0.0 {
-      return lat;
+    let lon = vec!["wof:longitude", "geom:longitude"]
+      .iter()
+      .map(|e| self.get_as_f64_or_else(e, 0.0))
+      .find(|e|*e != 0.0);
+    if let Some(lon) = lon {
+      return lon;
     }
     self.get_min_lon() + ((self.get_max_lon() - self.get_min_lon()) / 2.0)
   }
