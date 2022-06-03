@@ -86,7 +86,7 @@ impl Print {
         file
           .read_to_string(&mut buffer)
           .expect_exit(message_error.as_str());
-        let mut json = crate::parse_string_to_json(buffer).expect_exit(message_error.as_str());
+        let mut json = crate::parse_string_to_json(&buffer).expect_exit(message_error.as_str());
         self.print_json(&mut json, &message_error);
       }
     } else {

@@ -91,7 +91,7 @@ impl Shapefile {
   }
 
   fn add_string(&self, shapefile: &mut shapefile::Shapefile, string: String) -> Result<(), String> {
-    let json = crate::parse_string_to_json(string)?;
+    let json = crate::parse_string_to_json(&string)?;
     self.add_json(shapefile, json)
   }
 

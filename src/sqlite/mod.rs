@@ -102,7 +102,7 @@ impl SQLite {
 
   /// Add the string content to the database, it must be a WOF GeoJSON.
   pub fn add_string(&self, buf: String) -> Result<(), String> {
-    let json = crate::parse_string_to_json(buf)?;
+    let json = crate::parse_string_to_json(&buf)?;
     let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
     self.add(geojson)
   }
@@ -301,7 +301,7 @@ impl SQLite {
       .stringify_err("Can't get rows of table geojson")?;
     for body in rows {
       let body = std::str::from_utf8(&body.unwrap()).unwrap().to_string();
-      let json = crate::parse_string_to_json(body).stringify_err("Can't parse geojson body")?;
+      let json = crate::parse_string_to_json(&body).stringify_err("Can't parse geojson body")?;
       crate::ser::json_to_writer(&json, &mut writer).stringify_err("Can't write to output")?;
       writeln!(&mut writer, "").stringify_err("Can't write to output")?;
     }
@@ -323,7 +323,7 @@ impl SQLite {
 
     if let Some(body) = rows.next() {
       let body = std::str::from_utf8(&body.unwrap()).unwrap().to_string();
-      let json = crate::parse_string_to_json(body).stringify_err("Can't parse geojson body")?;
+      let json = crate::parse_string_to_json(&body).stringify_err("Can't parse geojson body")?;
       Ok(Some(json))
     } else {
       Ok(None)

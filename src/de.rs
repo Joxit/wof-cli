@@ -31,7 +31,7 @@ pub fn parse_file_to_json<P: AsRef<Path>>(path: P) -> Result<JsonValue, String> 
 }
 
 /// Parse the String buffer and return the associated [`JsonValue`](../../json/value/enum.JsonValue.html).
-pub fn parse_string_to_json(buffer: String) -> Result<JsonValue, String> {
+pub fn parse_string_to_json(buffer: &String) -> Result<JsonValue, String> {
   match json::parse(&buffer) {
     Ok(json) => Ok(json),
     Err(e) => return Err(format!("{}", e)),

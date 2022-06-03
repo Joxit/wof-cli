@@ -42,7 +42,7 @@ impl Patch {
           .read_to_string(&mut buffer)
           .expect_exit(&format!("Can't open file {}", patchfile));
         self
-          .apply_buffer_patch(buffer, &sqlite)
+          .apply_buffer_patch(&buffer, &sqlite)
           .expect_exit(&format!("Something goes wrong with patch {}", patchfile));
       };
     }
@@ -57,7 +57,7 @@ impl Patch {
         Ok(0) => break,
         Ok(_) => {
           self
-            .apply_buffer_patch(input, &sqlite)
+            .apply_buffer_patch(&input, &sqlite)
             .expect_exit(&format!("Something goes wrong with patch n°{}", cpt));
         }
         Err(_) => break,
@@ -76,7 +76,7 @@ impl Patch {
           .read_to_string(&mut buffer)
           .expect_exit(&format!("Can't open file {:?}", path.path()));
         self
-          .apply_buffer_patch(buffer, &sqlite)
+          .apply_buffer_patch(&buffer, &sqlite)
           .expect_exit(&format!(
             "Something goes wrong with patch {:?}",
             path.path()
@@ -85,7 +85,7 @@ impl Patch {
     }
   }
 
-  fn apply_buffer_patch(&self, buffer: String, sqlite: &Option<SQLite>) -> Result<(), String> {
+  fn apply_buffer_patch(&self, buffer: &String, sqlite: &Option<SQLite>) -> Result<(), String> {
     let json_value = crate::parse_string_to_json(buffer).stringify_err("Malformed json object")?;
     let json = json_value
       .as_object()

@@ -52,7 +52,7 @@ impl Postgres {
 
   /// Add the string content to the database, it must be a WOF GeoJSON.
   pub fn add_string(&mut self, buf: String) -> Result<(), String> {
-    let json = crate::parse_string_to_json(buf)?;
+    let json = crate::parse_string_to_json(&buf)?;
     let geojson = WOFGeoJSON::as_valid_wof_geojson(&json)?;
     self.add(geojson)
   }

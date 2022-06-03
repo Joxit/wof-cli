@@ -13,7 +13,7 @@
 //!    "bbox": [ 0, 0, 0, 0 ],
 //!    "geometry": {"coordinates":[0, 0],"type":"Point"}
 //!  }"#.to_string();
-//!let json = parse_string_to_json(buf).unwrap();
+//!let json = parse_string_to_json(&buf).unwrap();
 //!let geojson = WOFGeoJSON::as_valid_wof_geojson(&json).unwrap();
 //!assert_eq!(geojson.id, 0);
 //!```

@@ -39,7 +39,7 @@ impl List {
           let mut file = std::fs::File::open(path.path()).exit_silently();
           let mut buffer = String::new();
           file.read_to_string(&mut buffer).exit_silently();
-          let json = crate::parse_string_to_json(buffer).exit_silently();
+          let json = crate::parse_string_to_json(&buffer).exit_silently();
           crate::ser::json_to_writer(&json, &mut std::io::stdout()).exit_silently();
           writeln!(std::io::stdout(), "").exit_silently()
         } else {
