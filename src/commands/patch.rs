@@ -138,6 +138,10 @@ impl Patch {
           .stringify_err("Can't set geometry attribut")?;
       }
     }
+    if let Some(bbox) = patch.get("bbox") {original
+      .insert("bbox", bbox.clone())
+      .stringify_err("Can't set bbox attribut")?;
+    }
 
     Ok(())
   }
