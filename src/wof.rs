@@ -259,7 +259,7 @@ impl<'a> WOFGeoJSON<'a> {
     let lat = vec!["wof:latitude", "geom:latitude"]
       .iter()
       .map(|e| self.get_as_f64_or_else(e, 0.0))
-      .find(|e|*e != 0.0);
+      .find(|e| *e != 0.0);
     if let Some(lat) = lat {
       return lat;
     }
@@ -270,7 +270,7 @@ impl<'a> WOFGeoJSON<'a> {
     let lon = vec!["wof:longitude", "geom:longitude"]
       .iter()
       .map(|e| self.get_as_f64_or_else(e, 0.0))
-      .find(|e|*e != 0.0);
+      .find(|e| *e != 0.0);
     if let Some(lon) = lon {
       return lon;
     }
