@@ -1,10 +1,10 @@
 pub const TABLE_GEOMETRIES: &'static str = r#"CREATE TABLE IF NOT EXISTS wof_geometries (
-	id INTEGER NOT NULL,
+  id INTEGER NOT NULL,
   geometry public.geometry(Geometry, ${srid}),
-	source TEXT,
+  source TEXT,
   properties JSONB,
-	is_alt BOOLEAN,
-	lastmodified INTEGER,
+  is_alt BOOLEAN,
+  lastmodified INTEGER,
 
   CONSTRAINT wof_geometries_pkey PRIMARY KEY (id, source)
 );"#;

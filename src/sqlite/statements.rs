@@ -1,9 +1,9 @@
 pub const TABLE_GEOJSON: &'static str = r#"CREATE TABLE IF NOT EXISTS geojson (
-	id INTEGER NOT NULL,
-	body TEXT,
-	source TEXT,
-	is_alt BOOLEAN,
-	lastmodified INTEGER
+  id INTEGER NOT NULL,
+  body TEXT,
+  source TEXT,
+  is_alt BOOLEAN,
+  lastmodified INTEGER
 );"#;
 
 pub const INDEXES_GEOJSON: &'static str = r#"CREATE UNIQUE INDEX IF NOT EXISTS geojson_by_id ON geojson (id, source);
@@ -15,26 +15,26 @@ INSERT OR REPLACE INTO geojson (id, body, source, is_alt, lastmodified) VALUES (
 "#;
 
 pub const TABLE_SPR: &'static str = r#"CREATE TABLE IF NOT EXISTS spr (
-	id INTEGER NOT NULL PRIMARY KEY,
-	parent_id INTEGER,
-	name TEXT,
-	placetype TEXT,
-	country TEXT,
-	repo TEXT,
-	latitude REAL,
-	longitude REAL,
-	min_latitude REAL,
-	min_longitude REAL,
-	max_latitude REAL,
-	max_longitude REAL,
-	is_current INTEGER,
-	is_deprecated INTEGER,
-	is_ceased INTEGER,
-	is_superseded INTEGER,
-	is_superseding INTEGER,
-	superseded_by TEXT,
-	supersedes TEXT,
-	lastmodified INTEGER
+  id INTEGER NOT NULL PRIMARY KEY,
+  parent_id INTEGER,
+  name TEXT,
+  placetype TEXT,
+  country TEXT,
+  repo TEXT,
+  latitude REAL,
+  longitude REAL,
+  min_latitude REAL,
+  min_longitude REAL,
+  max_latitude REAL,
+  max_longitude REAL,
+  is_current INTEGER,
+  is_deprecated INTEGER,
+  is_ceased INTEGER,
+  is_superseded INTEGER,
+  is_superseding INTEGER,
+  superseded_by TEXT,
+  supersedes TEXT,
+  lastmodified INTEGER
 );"#;
 
 pub const INDEXES_SPR: &'static str = r#"CREATE INDEX IF NOT EXISTS spr_by_lastmod ON spr (lastmodified);
@@ -87,8 +87,8 @@ INSERT OR REPLACE INTO names (
    id, placetype, country, language, extlang, script,
    region, variant, extension, privateuse, name, lastmodified
 ) VALUES (
-	?, ?, ?, ?, ?, ?,
-	?, ?, ?, ?, ?, ?
+  ?, ?, ?, ?, ?, ?,
+  ?, ?, ?, ?, ?, ?
 );"#;
 
 pub const INDEXES_NAMES: &'static str = r#"CREATE INDEX IF NOT EXISTS names_by_lastmod ON names (lastmodified);
@@ -114,14 +114,14 @@ pub const INSERT_ANCESTORS: &'static str = r#"
 INSERT OR REPLACE INTO ancestors (
    id, ancestor_id, ancestor_placetype, lastmodified
 ) VALUES (
-	?, ?, ?, ?
+  ?, ?, ?, ?
 );"#;
 
 pub const TABLE_CONCORDANCES: &'static str = r#"CREATE TABLE IF NOT EXISTS concordances (
-	id INTEGER NOT NULL,
-	other_id INTEGER NOT NULL,
-	other_source TEXT,
-	lastmodified INTEGER
+  id INTEGER NOT NULL,
+  other_id INTEGER NOT NULL,
+  other_source TEXT,
+  lastmodified INTEGER
 );"#;
 
 pub const INDEXES_CONCORDANCES: &'static str = r#"CREATE INDEX IF NOT EXISTS concordances_by_id ON concordances (id,lastmodified);
@@ -133,7 +133,7 @@ pub const INSERT_CONCORDANCES: &'static str = r#"
 INSERT OR REPLACE INTO concordances (
    id, other_id, other_source, lastmodified
 ) VALUES (
-	?, ?, ?, ?
+  ?, ?, ?, ?
 );"#;
 
 // Tweaks for perf:
