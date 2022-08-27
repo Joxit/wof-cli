@@ -56,10 +56,11 @@ impl Patch {
       match std::io::stdin().read_line(&mut input) {
         Ok(0) => break,
         Ok(_) => {
-          if !input.trim().is_empty() {
+          input = input.trim().to_string();
+          if !input.is_empty() && !input.starts_with("#") {
             self
-            .apply_buffer_patch(&input, &sqlite)
-            .expect_exit(&format!("Something goes wrong with patch n°{}", cpt));
+              .apply_buffer_patch(&input, &sqlite)
+              .expect_exit(&format!("Something goes wrong with patch n°{}", cpt));
           }
         }
         Err(_) => break,
