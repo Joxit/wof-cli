@@ -329,6 +329,14 @@ impl SQLite {
       Ok(None)
     }
   }
+
+  pub fn set_geojson_alt(&self, id: i32, source: &String, is_alt: i64) -> Result<(), String> {
+    self
+      .conn
+      .execute(statements::UPDATE_GEOJSON_ALT, params![is_alt, id, source])
+      .stringify_err("Can't update table geojson")?;
+    Ok(())
+  }
 }
 
 impl Default for SQLiteOpts {
