@@ -104,9 +104,11 @@ impl Patch {
         .get_geojson_by_id(id)
         .stringify_err(&format!("Something goes wrong on id {}", id))?
         .ok_or(&format!("GeoJSON {} not found in {}", id, self.original))?;
+      let original_source = Patch::get_source(&original_json)?;
       Patch::apply_patch_to_original(&json, &mut original_json)
         .stringify_err(&format!("Can't apply patch on id {}", id))?;
       let wof = WOFGeoJSON::as_valid_wof_geojson(&original_json)?;
+      sqlite.set_geojson_alt(wof.id, &original_source, 1)?;
       sqlite.add(wof)?;
     } else {
       let path = utils::get_geojson_path_from_id(&self.original, id)
@@ -148,5 +150,10 @@ impl Patch {
     }
 
     Ok(())
+  }
+
+  fn get_source(original: & JsonValue) -> Result<String, String> {
+    let wof = WOFGeoJSON::as_valid_wof_geojson(&original)?;
+    Ok(wof.get_source())
   }
 }
