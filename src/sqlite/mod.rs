@@ -251,11 +251,11 @@ impl SQLite {
   }
 
   pub fn write_all_ids<W: Write>(&self, mut writer: &mut W) -> Result<(), String> {
-    let sql = if self.opts.alt && self.opts.deprecated {
+    let sql = if !self.opts.alt && !self.opts.deprecated {
       statements::SELECT_ALL_IDS_WITHOUT_ALT_AND_DEPRECATED
-    } else if self.opts.alt {
+    } else if !self.opts.alt {
       statements::SELECT_ALL_IDS_WITHOUT_ALT
-    } else if self.opts.deprecated {
+    } else if !self.opts.deprecated {
       statements::SELECT_ALL_IDS_WITHOUT_DEPRECATED
     } else {
       statements::SELECT_ALL_IDS
@@ -279,11 +279,11 @@ impl SQLite {
   }
 
   pub fn write_all_geojsons<W: Write>(&self, mut writer: &mut W) -> Result<(), String> {
-    let sql = if self.opts.alt && self.opts.deprecated {
+    let sql = if !self.opts.alt && !self.opts.deprecated {
       statements::SELECT_ALL_GEOJSONS_WITHOUT_ALT_AND_DEPRECATED
-    } else if self.opts.alt {
+    } else if !self.opts.alt {
       statements::SELECT_ALL_GEOJSONS_WITHOUT_ALT
-    } else if self.opts.deprecated {
+    } else if !self.opts.deprecated {
       statements::SELECT_ALL_GEOJSONS_WITHOUT_DEPRECATED
     } else {
       statements::SELECT_ALL_GEOJSONS
