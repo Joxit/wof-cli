@@ -16,7 +16,7 @@ pub struct SQLite {
   /// Don't insert deprecated features.
   #[structopt(long = "no-deprecated")]
   pub no_deprecated: bool,
-  /// Don't insert deprecated features.
+  /// Don't prettify the geojson.
   #[structopt(long = "no-pretty")]
   pub no_pretty: bool,
   /// Preset for pelias use. Will insert only in geojson and spr tables.

@@ -106,7 +106,7 @@ USAGE:
 FLAGS:
     -h, --help             Prints help information
         --no-deprecated    Don't insert deprecated features
-        --no-pretty        Don't insert deprecated features
+        --no-pretty        Don't prettify the geojson
         --timings          Display timings during the build process, implies verbose
     -V, --version          Prints version information
     -v, --verbose          Activate verbose mode
