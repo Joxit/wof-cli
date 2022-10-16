@@ -1,6 +1,6 @@
 use crate::de::parse_file_to_json;
 use crate::repo::Walk;
-use crate::ser::wof_to_writer;
+use crate::ser::{wof_to_writer, wof_to_writer_pretty};
 use crate::sqlite::{SQLite, SQLiteOpts};
 use crate::std::StringifyError;
 use crate::utils::{self, JsonUtils, ResultExit};
@@ -18,6 +18,9 @@ pub struct Patch {
   /// The patch file or directory to apply, read from standard input by default.
   #[structopt(short = "i", long = "input")]
   pub patchfile: Option<String>,
+  /// Don't prettify the geojson.
+  #[structopt(long = "no-pretty")]
+  pub no_pretty: bool,
 }
 
 impl Patch {
@@ -26,9 +29,11 @@ impl Patch {
     let sqlite = if Path::new(&self.original).is_dir() {
       None
     } else {
-      Some(
-        SQLite::new(&self.original, SQLiteOpts::default()).expect_exit("Can't open the database."),
-      )
+      let sqlite_options = SQLiteOpts {
+        pretty: !self.no_pretty,
+        ..SQLiteOpts::default()
+      };
+      Some(SQLite::new(&self.original, sqlite_options).expect_exit("Can't open the database."))
     };
 
     if let Some(ref patchfile) = self.patchfile {
@@ -120,7 +125,12 @@ impl Patch {
       let wof = WOFGeoJSON::as_valid_wof_geojson(&original_json)?;
       let mut file =
         File::create(path.clone()).stringify_err(&format!("Can't open file {:?}", path))?;
-      wof_to_writer(&wof, &mut file).stringify_err(&format!("Can't write to file {:?}", path))?;
+      if self.no_pretty {
+        wof_to_writer(&wof, &mut file).stringify_err(&format!("Can't write to file {:?}", path))?;
+      } else {
+        wof_to_writer_pretty(&wof, &mut file)
+          .stringify_err(&format!("Can't write to file {:?}", path))?;
+      }
     }
     Ok(())
   }
@@ -152,7 +162,7 @@ impl Patch {
     Ok(())
   }
 
-  fn get_source(original: & JsonValue) -> Result<String, String> {
+  fn get_source(original: &JsonValue) -> Result<String, String> {
     let wof = WOFGeoJSON::as_valid_wof_geojson(&original)?;
     Ok(wof.get_source())
   }
