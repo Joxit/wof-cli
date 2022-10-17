@@ -171,6 +171,8 @@ pub const SELECT_ALL_GEOJSONS_WITHOUT_ALT_AND_DEPRECATED: &'static str = r#"SELE
   geojson LEFT JOIN spr ON geojson.id = spr.id
 ) WHERE geojson.is_alt = false AND spr.is_deprecated = false;"#;
 
-pub const SELECT_GEOJSON_BY_ID: &'static str = "SELECT body FROM geojson where id = ? AND is_alt != 1;";
+pub const SELECT_GEOJSON_BY_ID: &'static str =
+  "SELECT body FROM geojson where id = ? AND is_alt != 1;";
 
-pub const UPDATE_GEOJSON_ALT: &'static str = "UPDATE geojson SET is_alt = ? WHERE id = ? AND source = ?;";
+pub const UPDATE_GEOJSON_ALT: &'static str =
+  "UPDATE geojson SET is_alt = ? WHERE id = ? AND source = ?;";

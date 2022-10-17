@@ -51,7 +51,7 @@ impl From<String> for Predicate {
       }
     }
 
-    let mut left:Option<Predicate> = None;
+    let mut left: Option<Predicate> = None;
     let mut state = State::None;
     for token in &tokens {
       if state == State::None && token == &"=" {
@@ -59,8 +59,8 @@ impl From<String> for Predicate {
       } else if state == State::Eq && left.is_some() {
         return Predicate::Eq(
           Box::new(left.unwrap()),
-          Box::new(Predicate::from(token.to_string()))
-        )
+          Box::new(Predicate::from(token.to_string())),
+        );
       } else if left.is_none() {
         left = Some(Predicate::from(token.to_string()));
       }
@@ -70,11 +70,9 @@ impl From<String> for Predicate {
   }
 }
 
-
 fn get_variable_value(wof: &WOFGeoJSON, key: &String) -> Option<String> {
   None
 }
-
 
 #[cfg(test)]
 mod test_expression {
