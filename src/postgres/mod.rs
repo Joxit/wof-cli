@@ -71,6 +71,9 @@ impl Postgres {
           &document.is_alt_geom(),
           &document.get_last_modified(),
           &self.srid,
+          &document.get_placetype(),
+          &document.get_name(),
+          &document.get_country(),
         ],
       )
       .stringify_err(&format!("Can't insert document {}", document.id))?;
