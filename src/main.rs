@@ -1,6 +1,9 @@
 use crate::commands::Command;
 use structopt::StructOpt;
 
+#[macro_use]
+extern crate lazy_static;
+
 mod commands;
 mod git;
 mod repo;

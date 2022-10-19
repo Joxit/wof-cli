@@ -34,3 +34,5 @@ pub mod postgres;
 pub mod repo;
 pub mod shapefile;
 pub mod types;
+#[macro_use]
+extern crate lazy_static;

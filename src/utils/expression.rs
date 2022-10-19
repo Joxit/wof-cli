@@ -1,8 +1,21 @@
 use crate::wof::WOFGeoJSON;
+use regex::Regex;
+
+lazy_static! {
+  static ref NUMBER_REGEX: Regex = Regex::new("[0-9]+").unwrap();
+}
 
 pub struct Expression {
   variables: Vec<String>,
   predicate: Predicate,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Literal {
+  Null,
+  String(String),
+  Number(f64),
+  Boolean(bool),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -13,7 +26,7 @@ pub enum Predicate {
   Not(Box<Predicate>),
   Eq(Box<Predicate>, Box<Predicate>),
   Variable(String),
-  Literal(String),
+  Literal(Literal),
 }
 
 impl Predicate {
@@ -23,7 +36,7 @@ impl Predicate {
       Predicate::Or(left, right) => Ok(left.eval(&wof)? || right.eval(&wof)?),
       Predicate::Eq(left, right) => Ok(left.eval(&wof)? == right.eval(&wof)?),
       Predicate::Not(predicate) => Ok(!predicate.eval(&wof)?),
-      Predicate::Literal(s) => Ok(s == &String::from("true")),
+      Predicate::Literal(s) => Ok(s == &Literal::Boolean(true)),
       Predicate::Variable(s) => {
         Ok(get_variable_value(&wof, s).unwrap_or(String::from("false")) == String::from("true"))
       }
@@ -45,7 +58,9 @@ impl From<String> for Predicate {
     if tokens.len() == 1 {
       let token = tokens[0];
       if token.starts_with("'") && token.ends_with("'") {
-        return Predicate::Literal(token.trim_matches('\'').to_string());
+        return Predicate::Literal(Literal::String(token.trim_matches('\'').to_string()));
+      } else if NUMBER_REGEX.is_match(token) {
+        return Predicate::Literal(Literal::Number(token.parse::<f64>().unwrap()));
       } else {
         return Predicate::Variable(token.to_string());
       }
@@ -66,7 +81,7 @@ impl From<String> for Predicate {
       }
     }
 
-    Predicate::Literal("".to_string())
+    Predicate::Literal(Literal::String("".to_string()))
   }
 }
 
@@ -84,7 +99,15 @@ mod test_expression {
       Predicate::from(format!("variable = 'true'")),
       Predicate::Eq(
         Box::new(Predicate::Variable("variable".to_string())),
-        Box::new(Predicate::Literal("true".to_string()))
+        Box::new(Predicate::Literal(Literal::String("true".to_string())))
+      )
+    );
+
+    assert_eq!(
+      Predicate::from(format!("variable = 0")),
+      Predicate::Eq(
+        Box::new(Predicate::Variable("variable".to_string())),
+        Box::new(Predicate::Literal(Literal::Number(0.0)))
       )
     );
   }
