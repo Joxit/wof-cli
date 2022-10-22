@@ -61,6 +61,10 @@ impl From<String> for Predicate {
         return Predicate::Literal(Literal::String(token.trim_matches('\'').to_string()));
       } else if NUMBER_REGEX.is_match(token) {
         return Predicate::Literal(Literal::Number(token.parse::<f64>().unwrap()));
+      } else if token == "true".to_string() {
+        return Predicate::Literal(Literal::Boolean(true));
+      } else if token == "false".to_string() {
+        return Predicate::Literal(Literal::Boolean(false));
       } else {
         return Predicate::Variable(token.to_string());
       }
@@ -110,5 +114,15 @@ mod test_expression {
         Box::new(Predicate::Literal(Literal::Number(0.0)))
       )
     );
+
+    for elem in vec![true, false] {
+      assert_eq!(
+        Predicate::from(format!("variable = {}", elem)),
+        Predicate::Eq(
+          Box::new(Predicate::Variable("variable".to_string())),
+          Box::new(Predicate::Literal(Literal::Boolean(elem)))
+        )
+      );        
+    }
   }
 }
