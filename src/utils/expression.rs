@@ -65,6 +65,8 @@ impl From<String> for Predicate {
         return Predicate::Literal(Literal::Boolean(true));
       } else if token == "false".to_string() {
         return Predicate::Literal(Literal::Boolean(false));
+      } else if token.to_lowercase() == "null".to_string() {
+        return Predicate::Literal(Literal::Null);
       } else {
         return Predicate::Variable(token.to_string());
       }
@@ -121,6 +123,16 @@ mod test_expression {
         Predicate::Eq(
           Box::new(Predicate::Variable("variable".to_string())),
           Box::new(Predicate::Literal(Literal::Boolean(elem)))
+        )
+      );        
+    }
+
+    for elem in vec!["null", "Null", "NULL"] {
+      assert_eq!(
+        Predicate::from(format!("variable = {}", elem)),
+        Predicate::Eq(
+          Box::new(Predicate::Variable("variable".to_string())),
+          Box::new(Predicate::Literal(Literal::Null))
         )
       );        
     }
