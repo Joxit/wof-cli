@@ -2,7 +2,7 @@ use crate::wof::WOFGeoJSON;
 use regex::Regex;
 
 lazy_static! {
-  static ref NUMBER_REGEX: Regex = Regex::new("[0-9]+").unwrap();
+  static ref NUMBER_REGEX: Regex = Regex::new("^-?[0-9]+(\\.[0-9]*)?$").unwrap();
 }
 
 pub struct Expression {
@@ -109,13 +109,25 @@ mod test_expression {
       )
     );
 
-    assert_eq!(
-      Predicate::from(format!("variable = 0")),
-      Predicate::Eq(
-        Box::new(Predicate::Variable("variable".to_string())),
-        Box::new(Predicate::Literal(Literal::Number(0.0)))
-      )
-    );
+    for elem in vec![-1.90, 1.90, 0.0, 0.90, 1234.5678] {
+      assert_eq!(
+        Predicate::from(format!("variable = {}", elem)),
+        Predicate::Eq(
+          Box::new(Predicate::Variable("variable".to_string())),
+          Box::new(Predicate::Literal(Literal::Number(elem)))
+        )
+      );
+    }
+
+    for elem in vec![1, 2, -1, -100] {
+      assert_eq!(
+        Predicate::from(format!("variable = {}", elem)),
+        Predicate::Eq(
+          Box::new(Predicate::Variable("variable".to_string())),
+          Box::new(Predicate::Literal(Literal::Number(elem.into())))
+        )
+      );
+    }
 
     for elem in vec![true, false] {
       assert_eq!(
@@ -124,7 +136,7 @@ mod test_expression {
           Box::new(Predicate::Variable("variable".to_string())),
           Box::new(Predicate::Literal(Literal::Boolean(elem)))
         )
-      );        
+      );
     }
 
     for elem in vec!["null", "Null", "NULL"] {
@@ -134,7 +146,7 @@ mod test_expression {
           Box::new(Predicate::Variable("variable".to_string())),
           Box::new(Predicate::Literal(Literal::Null))
         )
-      );        
+      );
     }
   }
 }
