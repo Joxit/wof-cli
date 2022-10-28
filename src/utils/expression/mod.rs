@@ -1,3 +1,5 @@
+mod tokenizer;
+
 use crate::wof::WOFGeoJSON;
 use regex::Regex;
 
