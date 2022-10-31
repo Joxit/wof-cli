@@ -21,6 +21,7 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
     match clauses[i].to_lowercase().as_str() {
       "=" | "==" => tokens.push(Token::Eq),
       "!=" | "<>" => tokens.push(Token::Neq),
+      "and" | "&&" => tokens.push(Token::And),
       _ => {
         if clauses[i].starts_with("'") && clauses[i].ends_with("'") {
           tokens.push(Token::String(clauses[i].trim_matches('\'').to_string()));
@@ -56,6 +57,16 @@ mod test_tokenizer {
         vec![
           Token::Variable("variable".to_string()),
           Token::Neq,
+          Token::String("true".to_string())
+        ]
+      )
+    });
+    vec!["and", "&&"].iter().for_each(|neq| {
+      assert_eq!(
+        tokenize(format!("variable {} 'true'", neq)),
+        vec![
+          Token::Variable("variable".to_string()),
+          Token::And,
           Token::String("true".to_string())
         ]
       )
