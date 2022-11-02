@@ -23,8 +23,21 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
       "!=" | "<>" => tokens.push(Token::Neq),
       "and" | "&&" => tokens.push(Token::And),
       _ => {
-        if clauses[i].starts_with("'") && clauses[i].ends_with("'") {
-          tokens.push(Token::String(clauses[i].trim_matches('\'').to_string()));
+        if clauses[i].starts_with("'") {
+          if clauses[i].ends_with("'") {
+            tokens.push(Token::String(clauses[i].trim_matches('\'').to_string()));
+          } else {
+            let mut string = clauses[i].trim_start_matches('\'').to_string();
+            loop {
+              i = i + 1;
+              if i >= clauses.len() || clauses[i].ends_with("'") {
+                string = format!("{} {}", string, clauses[i].trim_end_matches('\''));
+                break;
+              }
+              string = format!("{} {}", string, clauses[i]);
+            }
+            tokens.push(Token::String(string));
+          }
         } else {
           tokens.push(Token::Variable(clauses[i].to_string()))
         }
@@ -71,5 +84,25 @@ mod test_tokenizer {
         ]
       )
     });
+  }
+
+  #[test]
+  fn tokenize_literal() {
+    assert_eq!(
+      tokenize(format!("variable = 'string'")),
+      vec![
+        Token::Variable("variable".to_string()),
+        Token::Eq,
+        Token::String("string".to_string())
+      ]
+    );
+    assert_eq!(
+      tokenize(format!("variable = 'string with many words'")),
+      vec![
+        Token::Variable("variable".to_string()),
+        Token::Eq,
+        Token::String("string with many words".to_string())
+      ]
+    );
   }
 }
