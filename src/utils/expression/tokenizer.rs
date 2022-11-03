@@ -25,16 +25,23 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
       _ => {
         if clauses[i].starts_with("'") {
           if clauses[i].ends_with("'") {
-            tokens.push(Token::String(clauses[i].trim_matches('\'').to_string()));
+            let mut string = clauses[i].to_string();
+            string.pop();
+            string.remove(0);
+            tokens.push(Token::String(string.replace("''", "'")));
           } else {
-            let mut string = clauses[i].trim_start_matches('\'').to_string();
+            let mut string = clauses[i].to_string();
+            string.remove(0);
+            string = string.replace("''", "'");
             loop {
               i = i + 1;
               if i >= clauses.len() || clauses[i].ends_with("'") {
-                string = format!("{} {}", string, clauses[i].trim_end_matches('\''));
+                let mut s = clauses[i].to_string();
+                s.pop();
+                string = format!("{} {}", string, s.replace("''", "'"));
                 break;
               }
-              string = format!("{} {}", string, clauses[i]);
+              string = format!("{} {}", string, clauses[i].replace("''", "'"));
             }
             tokens.push(Token::String(string));
           }
@@ -97,11 +104,27 @@ mod test_tokenizer {
       ]
     );
     assert_eq!(
+      tokenize(format!("variable = '''string'''")),
+      vec![
+        Token::Variable("variable".to_string()),
+        Token::Eq,
+        Token::String("'string'".to_string())
+      ]
+    );
+    assert_eq!(
       tokenize(format!("variable = 'string with many words'")),
       vec![
         Token::Variable("variable".to_string()),
         Token::Eq,
         Token::String("string with many words".to_string())
+      ]
+    );
+    assert_eq!(
+      tokenize(format!("variable = '''string with many quotes'''")),
+      vec![
+        Token::Variable("variable".to_string()),
+        Token::Eq,
+        Token::String("'string with many quotes'".to_string())
       ]
     );
   }
