@@ -1,3 +1,9 @@
+use regex::Regex;
+
+lazy_static! {
+  static ref END_QUOTE_REGEX: Regex = Regex::new("(('')+'$)|([^']'$)|(^'$)").unwrap();
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
   Eq,
@@ -24,7 +30,7 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
       "and" | "&&" => tokens.push(Token::And),
       _ => {
         if clauses[i].starts_with("'") {
-          if clauses[i].ends_with("'") {
+          if clauses[i].ends_with("'") && clauses[i] != "'" {
             let mut string = clauses[i].to_string();
             string.pop();
             string.remove(0);
@@ -35,7 +41,7 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
             string = string.replace("''", "'");
             loop {
               i = i + 1;
-              if i >= clauses.len() || clauses[i].ends_with("'") {
+              if i >= clauses.len() || END_QUOTE_REGEX.is_match(clauses[i]) {
                 let mut s = clauses[i].to_string();
                 s.pop();
                 string = format!("{} {}", string, s.replace("''", "'"));
@@ -125,6 +131,14 @@ mod test_tokenizer {
         Token::Variable("variable".to_string()),
         Token::Eq,
         Token::String("'string with many quotes'".to_string())
+      ]
+    );
+    assert_eq!(
+      tokenize(format!("variable = ' string with'' '' quotes inside '")),
+      vec![
+        Token::Variable("variable".to_string()),
+        Token::Eq,
+        Token::String(" string with' ' quotes inside ".to_string())
       ]
     );
   }
