@@ -28,6 +28,8 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
       "=" | "==" => tokens.push(Token::Eq),
       "!=" | "<>" => tokens.push(Token::Neq),
       "and" | "&&" => tokens.push(Token::And),
+      "true" => tokens.push(Token::Boolean(true)),
+      "false" => tokens.push(Token::Boolean(false)),
       _ => {
         if clauses[i].starts_with("'") {
           if clauses[i].ends_with("'") && clauses[i] != "'" {
@@ -139,6 +141,14 @@ mod test_tokenizer {
         Token::Variable("variable".to_string()),
         Token::Eq,
         Token::String(" string with' ' quotes inside ".to_string())
+      ]
+    );
+    assert_eq!(
+      tokenize(format!("variable = true")),
+      vec![
+        Token::Variable("variable".to_string()),
+        Token::Eq,
+        Token::Boolean(true)
       ]
     );
   }
