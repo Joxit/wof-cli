@@ -2,6 +2,7 @@ use regex::Regex;
 
 lazy_static! {
   static ref END_QUOTE_REGEX: Regex = Regex::new("(('')+'$)|([^']'$)|(^'$)").unwrap();
+  static ref NUMBER_REGEX: Regex = Regex::new("^-?[0-9]+(\\.[0-9]*)?$").unwrap();
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -53,7 +54,9 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
             }
             tokens.push(Token::String(string));
           }
-        } else {
+        } else if NUMBER_REGEX.is_match(clauses[i]) {
+          tokens.push(Token::Number(clauses[i].parse::<f64>().unwrap())); 
+        }else {
           tokens.push(Token::Variable(clauses[i].to_string()))
         }
       }
@@ -151,5 +154,27 @@ mod test_tokenizer {
         Token::Boolean(true)
       ]
     );
+
+    for elem in vec![-1.90, 1.90, 0.0, 0.90, 1234.5678] {
+      assert_eq!(
+        tokenize(format!("variable = {}", elem)),
+        vec![
+          Token::Variable("variable".to_string()),
+          Token::Eq,
+          Token::Number(elem)
+        ]
+      );
+    }
+
+    for elem in vec![1, 2, -1, -100] {
+      assert_eq!(
+        tokenize(format!("variable = {}", elem)),
+        vec![
+          Token::Variable("variable".to_string()),
+          Token::Eq,
+          Token::Number(elem.into())
+        ]
+      );
+    }
   }
 }
