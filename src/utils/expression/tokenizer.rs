@@ -29,6 +29,7 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
       "=" | "==" => tokens.push(Token::Eq),
       "!=" | "<>" => tokens.push(Token::Neq),
       "and" | "&&" => tokens.push(Token::And),
+      "or" | "||" => tokens.push(Token::Or),
       "true" => tokens.push(Token::Boolean(true)),
       "false" => tokens.push(Token::Boolean(false)),
       _ => {
@@ -99,6 +100,16 @@ mod test_tokenizer {
           Token::Variable("variable".to_string()),
           Token::And,
           Token::String("true".to_string())
+        ]
+      )
+    });
+    vec!["or", "||"].iter().for_each(|neq| {
+      assert_eq!(
+        tokenize(format!("true {} false", neq)),
+        vec![
+          Token::Boolean(true),
+          Token::Or,
+          Token::Boolean(false)
         ]
       )
     });
