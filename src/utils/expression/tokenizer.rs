@@ -30,6 +30,7 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
       "!=" | "<>" => tokens.push(Token::Neq),
       "and" | "&&" => tokens.push(Token::And),
       "or" | "||" => tokens.push(Token::Or),
+      "not" => tokens.push(Token::Not),
       "true" => tokens.push(Token::Boolean(true)),
       "false" => tokens.push(Token::Boolean(false)),
       _ => {
@@ -113,6 +114,13 @@ mod test_tokenizer {
         ]
       )
     });
+    assert_eq!(
+      tokenize(format!("not true")),
+      vec![
+        Token::Not,
+        Token::Boolean(true),
+      ]
+    )
   }
 
   #[test]
