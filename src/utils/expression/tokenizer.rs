@@ -58,8 +58,8 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
             tokens.push(Token::String(string));
           }
         } else if NUMBER_REGEX.is_match(clauses[i]) {
-          tokens.push(Token::Number(clauses[i].parse::<f64>().unwrap())); 
-        }else {
+          tokens.push(Token::Number(clauses[i].parse::<f64>().unwrap()));
+        } else {
           tokens.push(Token::Variable(clauses[i].to_string()))
         }
       }
@@ -108,26 +108,16 @@ mod test_tokenizer {
     vec!["or", "||"].iter().for_each(|neq| {
       assert_eq!(
         tokenize(format!("true {} false", neq)),
-        vec![
-          Token::Boolean(true),
-          Token::Or,
-          Token::Boolean(false)
-        ]
+        vec![Token::Boolean(true), Token::Or, Token::Boolean(false)]
       )
     });
     assert_eq!(
       tokenize(format!("not true")),
-      vec![
-        Token::Not,
-        Token::Boolean(true),
-      ]
+      vec![Token::Not, Token::Boolean(true),]
     );
     assert_eq!(
       tokenize(format!("in true")),
-      vec![
-        Token::In,
-        Token::Boolean(true),
-      ]
+      vec![Token::In, Token::Boolean(true),]
     );
   }
 
