@@ -13,14 +13,6 @@ pub struct Expression {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Literal {
-  Null,
-  String(String),
-  Number(f64),
-  Boolean(bool),
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum Predicate {
   And(Box<Predicate>, Box<Predicate>),
   Or(Box<Predicate>, Box<Predicate>),
@@ -28,7 +20,10 @@ pub enum Predicate {
   Not(Box<Predicate>),
   Eq(Box<Predicate>, Box<Predicate>),
   Variable(String),
-  Literal(Literal),
+  String(String),
+  Number(f64),
+  Boolean(bool),
+  Null,
 }
 
 impl Predicate {
@@ -38,7 +33,7 @@ impl Predicate {
       Predicate::Or(left, right) => Ok(left.eval(&wof)? || right.eval(&wof)?),
       Predicate::Eq(left, right) => Ok(left.eval(&wof)? == right.eval(&wof)?),
       Predicate::Not(predicate) => Ok(!predicate.eval(&wof)?),
-      Predicate::Literal(s) => Ok(s == &Literal::Boolean(true)),
+      Predicate::Boolean(b) => Ok(b == &true),
       Predicate::Variable(s) => {
         Ok(get_variable_value(&wof, s).unwrap_or(String::from("false")) == String::from("true"))
       }
@@ -60,15 +55,15 @@ impl From<String> for Predicate {
     if tokens.len() == 1 {
       let token = tokens[0];
       if token.starts_with("'") && token.ends_with("'") {
-        return Predicate::Literal(Literal::String(token.trim_matches('\'').to_string()));
+        return Predicate::String(token.trim_matches('\'').to_string());
       } else if NUMBER_REGEX.is_match(token) {
-        return Predicate::Literal(Literal::Number(token.parse::<f64>().unwrap()));
+        return Predicate::Number(token.parse::<f64>().unwrap());
       } else if token == "true".to_string() {
-        return Predicate::Literal(Literal::Boolean(true));
+        return Predicate::Boolean(true);
       } else if token == "false".to_string() {
-        return Predicate::Literal(Literal::Boolean(false));
+        return Predicate::Boolean(false);
       } else if token.to_lowercase() == "null".to_string() {
-        return Predicate::Literal(Literal::Null);
+        return Predicate::Null;
       } else {
         return Predicate::Variable(token.to_string());
       }
@@ -89,7 +84,7 @@ impl From<String> for Predicate {
       }
     }
 
-    Predicate::Literal(Literal::String("".to_string()))
+    Predicate::String("".to_string())
   }
 }
 
@@ -107,7 +102,7 @@ mod test_expression {
       Predicate::from(format!("variable = 'true'")),
       Predicate::Eq(
         Box::new(Predicate::Variable("variable".to_string())),
-        Box::new(Predicate::Literal(Literal::String("true".to_string())))
+        Box::new(Predicate::String("true".to_string()))
       )
     );
 
@@ -116,7 +111,7 @@ mod test_expression {
         Predicate::from(format!("variable = {}", elem)),
         Predicate::Eq(
           Box::new(Predicate::Variable("variable".to_string())),
-          Box::new(Predicate::Literal(Literal::Number(elem)))
+          Box::new(Predicate::Number(elem))
         )
       );
     }
@@ -126,7 +121,7 @@ mod test_expression {
         Predicate::from(format!("variable = {}", elem)),
         Predicate::Eq(
           Box::new(Predicate::Variable("variable".to_string())),
-          Box::new(Predicate::Literal(Literal::Number(elem.into())))
+          Box::new(Predicate::Number(elem.into()))
         )
       );
     }
@@ -136,7 +131,7 @@ mod test_expression {
         Predicate::from(format!("variable = {}", elem)),
         Predicate::Eq(
           Box::new(Predicate::Variable("variable".to_string())),
-          Box::new(Predicate::Literal(Literal::Boolean(elem)))
+          Box::new(Predicate::Boolean(elem))
         )
       );
     }
@@ -146,7 +141,7 @@ mod test_expression {
         Predicate::from(format!("variable = {}", elem)),
         Predicate::Eq(
           Box::new(Predicate::Variable("variable".to_string())),
-          Box::new(Predicate::Literal(Literal::Null))
+          Box::new(Predicate::Null)
         )
       );
     }
