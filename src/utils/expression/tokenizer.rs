@@ -1,4 +1,6 @@
+use super::Predicate;
 use regex::Regex;
+use std::convert::TryInto;
 
 lazy_static! {
   static ref END_QUOTE_REGEX: Regex = Regex::new("(('')+'$)|([^']'$)|(^'$)").unwrap();
@@ -67,6 +69,20 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
     i = i + 1;
   }
   tokens
+}
+
+impl TryInto<Predicate> for Token {
+  type Error = String;
+
+  fn try_into(self) -> Result<Predicate, Self::Error> {
+    match self {
+      Token::Boolean(b) => Ok(Predicate::Boolean(b)),
+      Token::String(s) => Ok(Predicate::String(s)),
+      Token::Number(n) => Ok(Predicate::Number(n)),
+      Token::Variable(v) => Ok(Predicate::Variable(v)),
+      _ => Err(format!("Cannot turn {:?} into Predicate.", self)),
+    }
+  }
 }
 
 #[cfg(test)]
