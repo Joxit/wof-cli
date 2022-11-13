@@ -1,3 +1,4 @@
+mod de;
 mod tokenizer;
 
 use crate::wof::WOFGeoJSON;
@@ -19,6 +20,7 @@ pub enum Predicate {
   In(Box<Predicate>, Vec<Predicate>),
   Not(Box<Predicate>),
   Eq(Box<Predicate>, Box<Predicate>),
+  Neq(Box<Predicate>, Box<Predicate>),
   Variable(String),
   String(String),
   Number(f64),
