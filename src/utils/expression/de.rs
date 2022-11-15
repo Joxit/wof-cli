@@ -5,7 +5,17 @@ use crate::utils::expression::Predicate;
 
 fn parse(expression: String) -> Result<Predicate, String> {
   let tokens = tokenize(expression);
-  let (predicate, index) = _parse(&tokens, 0)?;
+  let (mut predicate, mut index) = _parse(&tokens, 0)?;
+  while index < tokens.len() {
+    match tokens[index] {
+      Token::And => {
+        let (right, i) = _parse(&tokens, index + 1)?;
+        predicate = Predicate::And(Box::new(predicate), Box::new(right));
+        index = i;
+      }
+      _ => (),
+    }
+  }
   Ok(predicate)
 }
 
@@ -58,6 +68,38 @@ mod test_deserializer {
       Predicate::Neq(
         Box::new(Predicate::Number(0.6)),
         Box::new(Predicate::Boolean(true))
+      )
+    );
+    assert_eq!(
+      parse(format!("variable = true AND variable = false"))?,
+      Predicate::And(
+        Box::new(Predicate::Eq(
+          Box::new(Predicate::Variable("variable".to_string())),
+          Box::new(Predicate::Boolean(true))
+        )),
+        Box::new(Predicate::Eq(
+          Box::new(Predicate::Variable("variable".to_string())),
+          Box::new(Predicate::Boolean(false))
+        ))
+      )
+    );
+    assert_eq!(
+      parse(format!("variable = true AND variable <> false AND v2 = 32"))?,
+      Predicate::And(
+        Box::new(
+          Predicate::And(Box::new(Predicate::Eq(
+            Box::new(Predicate::Variable("variable".to_string())),
+            Box::new(Predicate::Boolean(true))
+          )),
+          Box::new(Predicate::Neq(
+            Box::new(Predicate::Variable("variable".to_string())),
+            Box::new(Predicate::Boolean(false))
+          ))
+        )),
+        Box::new(Predicate::Eq(
+          Box::new(Predicate::Variable("v2".to_string())),
+          Box::new(Predicate::Number(32.0))
+        ))
       )
     );
 
