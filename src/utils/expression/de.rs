@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use crate::utils::expression::tokenizer::{tokenize, Token};
 use crate::utils::expression::Predicate;
 
-fn parse(expression: String) -> Result<Predicate, String> {
+pub fn parse(expression: String) -> Result<Predicate, String> {
   let tokens = tokenize(expression);
   let (predicate, _) = _parse_op(&tokens, 0)?;
   Ok(predicate)
@@ -36,7 +36,7 @@ fn _parse_op(tokens: &Vec<Token>, index: usize) -> Result<(Predicate, usize), St
 
 fn _parse(tokens: &Vec<Token>, mut index: usize) -> Result<(Predicate, usize), String> {
   match tokens[index] {
-    Token::Variable(_) | Token::Number(_) | Token::String(_) | Token::Boolean(_) => {
+    Token::Variable(_) | Token::Number(_) | Token::String(_) | Token::Boolean(_) | Token::Null => {
       let left: Predicate = tokens[index].clone().try_into()?;
       index = index + 1;
       match tokens[index] {
@@ -56,7 +56,6 @@ fn _parse(tokens: &Vec<Token>, mut index: usize) -> Result<(Predicate, usize), S
         }
         _ => (),
       }
-      let operation: Predicate = tokens[index].clone().try_into()?;
     }
     _ => (),
   };

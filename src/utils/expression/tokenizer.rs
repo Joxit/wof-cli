@@ -19,6 +19,7 @@ pub enum Token {
   String(String),
   Number(f64),
   Boolean(bool),
+  Null,
 }
 
 pub fn tokenize(predicate: String) -> Vec<Token> {
@@ -36,6 +37,7 @@ pub fn tokenize(predicate: String) -> Vec<Token> {
       "in" => tokens.push(Token::In),
       "true" => tokens.push(Token::Boolean(true)),
       "false" => tokens.push(Token::Boolean(false)),
+      "null" => tokens.push(Token::Null),
       _ => {
         if clauses[i].starts_with("'") {
           if clauses[i].ends_with("'") && clauses[i] != "'" {
@@ -80,6 +82,7 @@ impl TryInto<Predicate> for Token {
       Token::String(s) => Ok(Predicate::String(s)),
       Token::Number(n) => Ok(Predicate::Number(n)),
       Token::Variable(v) => Ok(Predicate::Variable(v)),
+      Token::Null => Ok(Predicate::Null),
       _ => Err(format!("Cannot turn {:?} into Predicate.", self)),
     }
   }
