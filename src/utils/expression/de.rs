@@ -5,7 +5,12 @@ use crate::utils::expression::Predicate;
 
 fn parse(expression: String) -> Result<Predicate, String> {
   let tokens = tokenize(expression);
-  let (mut predicate, mut index) = _parse(&tokens, 0)?;
+  let (predicate, _) = _parse_op(&tokens, 0)?;
+  Ok(predicate)
+}
+
+fn _parse_op(tokens: &Vec<Token>, index: usize) -> Result<(Predicate, usize), String> {
+  let (mut predicate, mut index) = _parse(&tokens, index)?;
   while index < tokens.len() {
     match tokens[index] {
       Token::And => {
@@ -13,10 +18,20 @@ fn parse(expression: String) -> Result<Predicate, String> {
         predicate = Predicate::And(Box::new(predicate), Box::new(right));
         index = i;
       }
-      _ => (),
+      Token::Or => {
+        let (right, i) = _parse_op(tokens, index + 1)?;
+        predicate = Predicate::Or(Box::new(predicate), Box::new(right));
+        index = i;
+      }
+      _ => {
+        return Err(format!(
+          "Token {} must be an operator, found {:?}",
+          index, tokens[index]
+        ))
+      }
     }
   }
-  Ok(predicate)
+  Ok((predicate, index))
 }
 
 fn _parse(tokens: &Vec<Token>, mut index: usize) -> Result<(Predicate, usize), String> {
@@ -86,8 +101,8 @@ mod test_deserializer {
     assert_eq!(
       parse(format!("variable = true AND variable <> false AND v2 = 32"))?,
       Predicate::And(
-        Box::new(
-          Predicate::And(Box::new(Predicate::Eq(
+        Box::new(Predicate::And(
+          Box::new(Predicate::Eq(
             Box::new(Predicate::Variable("variable".to_string())),
             Box::new(Predicate::Boolean(true))
           )),
@@ -99,6 +114,32 @@ mod test_deserializer {
         Box::new(Predicate::Eq(
           Box::new(Predicate::Variable("v2".to_string())),
           Box::new(Predicate::Number(32.0))
+        ))
+      )
+    );
+
+    assert_eq!(
+      parse(format!("v1 = 1 AND v2 <> 2 OR v3 = 3 AND v4 <> 4"))?,
+      Predicate::Or(
+        Box::new(Predicate::And(
+          Box::new(Predicate::Eq(
+            Box::new(Predicate::Variable("v1".to_string())),
+            Box::new(Predicate::Number(1.0))
+          )),
+          Box::new(Predicate::Neq(
+            Box::new(Predicate::Variable("v2".to_string())),
+            Box::new(Predicate::Number(2.0))
+          ))
+        )),
+        Box::new(Predicate::And(
+          Box::new(Predicate::Eq(
+            Box::new(Predicate::Variable("v3".to_string())),
+            Box::new(Predicate::Number(3.0))
+          )),
+          Box::new(Predicate::Neq(
+            Box::new(Predicate::Variable("v4".to_string())),
+            Box::new(Predicate::Number(4.0))
+          ))
         ))
       )
     );
