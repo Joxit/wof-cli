@@ -1,17 +1,9 @@
 mod de;
 mod tokenizer;
 
+use super::expression::de::parse;
 use crate::wof::WOFGeoJSON;
-use regex::Regex;
-
-lazy_static! {
-  static ref NUMBER_REGEX: Regex = Regex::new("^-?[0-9]+(\\.[0-9]*)?$").unwrap();
-}
-
-pub struct Expression {
-  variables: Vec<String>,
-  predicate: Predicate,
-}
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Predicate {
@@ -44,49 +36,10 @@ impl Predicate {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-enum State {
-  Eq,
-  None,
-}
-
-impl From<String> for Predicate {
-  fn from(predicate: String) -> Self {
-    let tokens: Vec<&str> = predicate.split(" ").collect();
-
-    if tokens.len() == 1 {
-      let token = tokens[0];
-      if token.starts_with("'") && token.ends_with("'") {
-        return Predicate::String(token.trim_matches('\'').to_string());
-      } else if NUMBER_REGEX.is_match(token) {
-        return Predicate::Number(token.parse::<f64>().unwrap());
-      } else if token == "true".to_string() {
-        return Predicate::Boolean(true);
-      } else if token == "false".to_string() {
-        return Predicate::Boolean(false);
-      } else if token.to_lowercase() == "null".to_string() {
-        return Predicate::Null;
-      } else {
-        return Predicate::Variable(token.to_string());
-      }
-    }
-
-    let mut left: Option<Predicate> = None;
-    let mut state = State::None;
-    for token in &tokens {
-      if state == State::None && token == &"=" {
-        state = State::Eq;
-      } else if state == State::Eq && left.is_some() {
-        return Predicate::Eq(
-          Box::new(left.unwrap()),
-          Box::new(Predicate::from(token.to_string())),
-        );
-      } else if left.is_none() {
-        left = Some(Predicate::from(token.to_string()));
-      }
-    }
-
-    Predicate::String("".to_string())
+impl TryFrom<String> for Predicate {
+  type Error = String;
+  fn try_from(predicate: String) -> Result<Self, Self::Error> {
+    parse(predicate)
   }
 }
 
@@ -99,9 +52,9 @@ mod test_expression {
   use super::*;
 
   #[test]
-  fn create_predicate() {
+  fn create_predicate() -> Result<(), String> {
     assert_eq!(
-      Predicate::from(format!("variable = 'true'")),
+      Predicate::try_from(format!("variable = 'true'"))?,
       Predicate::Eq(
         Box::new(Predicate::Variable("variable".to_string())),
         Box::new(Predicate::String("true".to_string()))
@@ -110,7 +63,7 @@ mod test_expression {
 
     for elem in vec![-1.90, 1.90, 0.0, 0.90, 1234.5678] {
       assert_eq!(
-        Predicate::from(format!("variable = {}", elem)),
+        Predicate::try_from(format!("variable = {}", elem))?,
         Predicate::Eq(
           Box::new(Predicate::Variable("variable".to_string())),
           Box::new(Predicate::Number(elem))
@@ -120,7 +73,7 @@ mod test_expression {
 
     for elem in vec![1, 2, -1, -100] {
       assert_eq!(
-        Predicate::from(format!("variable = {}", elem)),
+        Predicate::try_from(format!("variable = {}", elem))?,
         Predicate::Eq(
           Box::new(Predicate::Variable("variable".to_string())),
           Box::new(Predicate::Number(elem.into()))
@@ -130,7 +83,7 @@ mod test_expression {
 
     for elem in vec![true, false] {
       assert_eq!(
-        Predicate::from(format!("variable = {}", elem)),
+        Predicate::try_from(format!("variable = {}", elem))?,
         Predicate::Eq(
           Box::new(Predicate::Variable("variable".to_string())),
           Box::new(Predicate::Boolean(elem))
@@ -140,12 +93,13 @@ mod test_expression {
 
     for elem in vec!["null", "Null", "NULL"] {
       assert_eq!(
-        Predicate::from(format!("variable = {}", elem)),
+        Predicate::try_from(format!("variable = {}", elem))?,
         Predicate::Eq(
           Box::new(Predicate::Variable("variable".to_string())),
           Box::new(Predicate::Null)
         )
       );
     }
+    Ok(())
   }
 }
