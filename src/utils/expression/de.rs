@@ -60,8 +60,7 @@ fn _parse(tokens: &Vec<Token>, mut index: usize) -> Result<(Predicate, usize), S
     _ => (),
   };
 
-  index = index + 1;
-  Ok((Predicate::Null, 0))
+  Err(format!("Incorrect token found {:?}", tokens[index]))
 }
 
 #[cfg(test)]
