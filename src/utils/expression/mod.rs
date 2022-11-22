@@ -2,8 +2,10 @@ mod de;
 mod tokenizer;
 
 use super::expression::de::parse;
+use crate::utils::JsonUtils;
 use crate::wof::WOFGeoJSON;
 use crate::JsonValue;
+use json::object;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -23,17 +25,31 @@ pub enum Predicate {
 
 impl Predicate {
   fn eval(&self, wof: &WOFGeoJSON) -> Result<Predicate, String> {
+    let json = object! {
+      "id" => wof.id,
+      "geometry" => wof.geometry.clone(),
+      "properties" => wof.properties.clone(),
+      "bbox" => wof.bbox.clone(),
+    };
+    self.eval_json_value(&json)
+  }
+
+  fn eval_json_value(&self, json: &JsonValue) -> Result<Predicate, String> {
     match self {
       Predicate::And(left, right) => Ok(Predicate::Boolean(
-        left.eval(&wof)?.as_bool()? && right.eval(&wof)?.as_bool()?,
+        left.eval_json_value(&json)?.as_bool()? && right.eval_json_value(&json)?.as_bool()?,
       )),
       Predicate::Or(left, right) => Ok(Predicate::Boolean(
-        left.eval(&wof)?.as_bool()? || right.eval(&wof)?.as_bool()?,
+        left.eval_json_value(&json)?.as_bool()? || right.eval_json_value(&json)?.as_bool()?,
       )),
-      Predicate::Eq(left, right) => Ok(Predicate::Boolean(left.eval(&wof)? == right.eval(&wof)?)),
-      Predicate::Not(predicate) => Ok(Predicate::Boolean(!(predicate.eval(&wof)?.as_bool()?))),
+      Predicate::Eq(left, right) => Ok(Predicate::Boolean(
+        left.eval_json_value(&json)? == right.eval_json_value(&json)?,
+      )),
+      Predicate::Not(predicate) => Ok(Predicate::Boolean(
+        !(predicate.eval_json_value(&json)?.as_bool()?),
+      )),
       Predicate::Boolean(b) => Ok(Predicate::Boolean(b == &true)),
-      Predicate::Variable(s) => Ok(get_variable_value(&wof, s)),
+      Predicate::Variable(s) => get_variable_value(&json, s),
       _ => Ok(self.clone()),
     }
   }
@@ -53,25 +69,50 @@ impl TryFrom<String> for Predicate {
   }
 }
 
-fn get_variable_value(wof: &WOFGeoJSON, key: &String) -> Predicate {
-  match key.as_str() {
-    "geom_type" => match wof.geometry.get("type") {
-      Some(value) => value
+fn get_geometry_type(json: &JsonValue) -> Result<Predicate, String> {
+  json
+    .as_object()
+    .ok_or(format!("Evaluated json must be an object!"))?
+    .get("geometry")
+    .ok_or(format!("Evaluated json must contains a geometry object!"))?
+    .as_object()
+    .ok_or(format!("Evaluated json geometry must be an object!"))?
+    .get("type")
+    .ok_or(format!("Evaluated json must contains geometry.type"))
+    .map(|value| {
+      value
         .as_str()
         .map(|value| Predicate::String(value.to_string()))
-        .unwrap_or(Predicate::Null),
-      _ => Predicate::Null,
-    },
-    key => match wof.properties.get(key) {
-      Some(value) => match value {
-        JsonValue::Short(s) => Predicate::String(s.to_string()),
-        JsonValue::String(s) => Predicate::String(s.to_string()),
-        JsonValue::Number(_) => Predicate::Number(value.as_f64().unwrap()),
-        JsonValue::Boolean(b) => Predicate::Boolean(*b),
-        _ => Predicate::Null,
-      },
-      _ => Predicate::Null,
-    },
+        .unwrap_or(Predicate::Null)
+    })
+}
+
+fn get_property(json: &JsonValue, key: &str) -> Result<Predicate, String> {
+  json
+    .as_object()
+    .ok_or(format!("Evaluated json must be an object!"))?
+    .get("properties")
+    .ok_or(format!("Evaluated json must contains a properties object!"))?
+    .as_object()
+    .ok_or(format!("Evaluated json properties must be an object!"))?
+    .get(key)
+    .map_or(Ok(Predicate::Null), self::json_value_to_predicate)
+}
+
+fn json_value_to_predicate(value: &JsonValue) -> Result<Predicate, String> {
+  match value {
+    JsonValue::Short(s) => Ok(Predicate::String(s.to_string())),
+    JsonValue::String(s) => Ok(Predicate::String(s.to_string())),
+    JsonValue::Number(_) => Ok(Predicate::Number(value.as_f64().unwrap())),
+    JsonValue::Boolean(b) => Ok(Predicate::Boolean(*b)),
+    _ => Ok(Predicate::Null),
+  }
+}
+
+fn get_variable_value(json: &JsonValue, key: &String) -> Result<Predicate, String> {
+  match key.as_str() {
+    "geom_type" => get_geometry_type(&json),
+    key => get_property(&json, key),
   }
 }
 
