@@ -15,6 +15,9 @@ pub const TABLE_GEOMETRIES: &'static str = r#"CREATE TABLE IF NOT EXISTS wof_geo
 pub const INDEXES_GEOMETRIES: &'static str = r#"CREATE INDEX IF NOT EXISTS wof_geometries_geom ON public.wof_geometries USING gist (geometry);
 CREATE INDEX IF NOT EXISTS wof_geometries_geom_geohash ON public.wof_geometries USING btree (public.st_geohash(public.st_transform(public.st_setsrid((public.box2d(geometry))::public.geometry, ${srid}), 4326)));
 ALTER TABLE public.wof_geometries CLUSTER ON wof_geometries_geom_geohash;
+CREATE INDEX IF NOT EXISTS wof_geometries_by_placetype ON wof_geometries (placetype);
+CREATE INDEX IF NOT EXISTS wof_geometries_by_country ON wof_geometries (country, placetype);
+CREATE INDEX IF NOT EXISTS wof_geometries_by_name ON wof_geometries (name, placetype);
 "#;
 
 pub const INSERT_GEOMETRIES: &'static str = r#"
