@@ -1,11 +1,9 @@
 mod de;
+mod evaluate;
 mod tokenizer;
 
+pub use evaluate::Evaluate;
 use super::expression::de::parse;
-use crate::utils::JsonUtils;
-use crate::wof::WOFGeoJSON;
-use crate::JsonValue;
-use json::object;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,36 +22,6 @@ pub enum Predicate {
 }
 
 impl Predicate {
-  fn eval(&self, wof: &WOFGeoJSON) -> Result<Predicate, String> {
-    let json = object! {
-      "id" => wof.id,
-      "geometry" => wof.geometry.clone(),
-      "properties" => wof.properties.clone(),
-      "bbox" => wof.bbox.clone(),
-    };
-    self.eval_json_value(&json)
-  }
-
-  fn eval_json_value(&self, json: &JsonValue) -> Result<Predicate, String> {
-    match self {
-      Predicate::And(left, right) => Ok(Predicate::Boolean(
-        left.eval_json_value(&json)?.as_bool()? && right.eval_json_value(&json)?.as_bool()?,
-      )),
-      Predicate::Or(left, right) => Ok(Predicate::Boolean(
-        left.eval_json_value(&json)?.as_bool()? || right.eval_json_value(&json)?.as_bool()?,
-      )),
-      Predicate::Eq(left, right) => Ok(Predicate::Boolean(
-        left.eval_json_value(&json)? == right.eval_json_value(&json)?,
-      )),
-      Predicate::Not(predicate) => Ok(Predicate::Boolean(
-        !(predicate.eval_json_value(&json)?.as_bool()?),
-      )),
-      Predicate::Boolean(b) => Ok(Predicate::Boolean(b == &true)),
-      Predicate::Variable(s) => get_variable_value(&json, s),
-      _ => Ok(self.clone()),
-    }
-  }
-
   fn as_bool(&self) -> Result<bool, String> {
     match self {
       Predicate::Boolean(b) => Ok(*b),
@@ -69,57 +37,8 @@ impl TryFrom<String> for Predicate {
   }
 }
 
-fn get_geometry_type(json: &JsonValue) -> Result<Predicate, String> {
-  json
-    .as_object()
-    .ok_or(format!("Evaluated json must be an object!"))?
-    .get("geometry")
-    .ok_or(format!("Evaluated json must contains a geometry object!"))?
-    .as_object()
-    .ok_or(format!("Evaluated json geometry must be an object!"))?
-    .get("type")
-    .ok_or(format!("Evaluated json must contains geometry.type"))
-    .map(|value| {
-      value
-        .as_str()
-        .map(|value| Predicate::String(value.to_string()))
-        .unwrap_or(Predicate::Null)
-    })
-}
-
-fn get_property(json: &JsonValue, key: &str) -> Result<Predicate, String> {
-  json
-    .as_object()
-    .ok_or(format!("Evaluated json must be an object!"))?
-    .get("properties")
-    .ok_or(format!("Evaluated json must contains a properties object!"))?
-    .as_object()
-    .ok_or(format!("Evaluated json properties must be an object!"))?
-    .get(key)
-    .map_or(Ok(Predicate::Null), self::json_value_to_predicate)
-}
-
-fn json_value_to_predicate(value: &JsonValue) -> Result<Predicate, String> {
-  match value {
-    JsonValue::Short(s) => Ok(Predicate::String(s.to_string())),
-    JsonValue::String(s) => Ok(Predicate::String(s.to_string())),
-    JsonValue::Number(_) => Ok(Predicate::Number(value.as_f64().unwrap())),
-    JsonValue::Boolean(b) => Ok(Predicate::Boolean(*b)),
-    _ => Ok(Predicate::Null),
-  }
-}
-
-fn get_variable_value(json: &JsonValue, key: &String) -> Result<Predicate, String> {
-  match key.as_str() {
-    "geom_type" => get_geometry_type(&json),
-    key => get_property(&json, key),
-  }
-}
-
 #[cfg(test)]
 mod test_expression {
-  use json::object;
-
   use super::*;
 
   #[test]
@@ -181,62 +100,6 @@ mod test_expression {
         )
       );
     }
-    Ok(())
-  }
-
-  #[test]
-  fn evaluate_predicate() -> Result<(), String> {
-    let json = object! {
-      "type" => "Feature",
-      "properties" => object!{
-        "name:fra_x_preferred" => vec![ "Ajaccio" ],
-        "wof:id" => 101748927,
-        "wof:lang" => vec![ "fre" ],
-        "name:eng_x_preferred" => vec![ "Ajaccio" ],
-        "wof:placetype" => "localadmin",
-        "bool_true" => true,
-      },
-      "geometry" => object!{
-        "coordinates" => vec![vec![
-          vec![8.585396,41.873571], vec![8.826011,41.873571], vec![8.826011,41.971536], vec![8.585396,41.968222], vec![8.585396,41.873571]
-        ]],
-        "type" => "Polygon"
-      },
-      "bbox" => vec![
-        8.585396,
-        41.873571,
-        8.826011,
-        41.971536
-      ],
-      "id" => 101748927,
-    };
-    let wof_obj = WOFGeoJSON::as_valid_wof_geojson(&json)?;
-
-    assert_eq!(
-      Predicate::try_from(format!("geom_type = 'Polygon'"))?.eval(&wof_obj)?,
-      Predicate::Boolean(true)
-    );
-
-    assert_eq!(
-      Predicate::try_from(format!("wof:placetype = 'localadmin'"))?.eval(&wof_obj)?,
-      Predicate::Boolean(true)
-    );
-
-    assert_eq!(
-      Predicate::try_from(format!("wof:id = 101748927"))?.eval(&wof_obj)?,
-      Predicate::Boolean(true)
-    );
-
-    assert_eq!(
-      Predicate::try_from(format!("geom:src = 'osm'"))?.eval(&wof_obj)?,
-      Predicate::Boolean(false)
-    );
-
-    assert_eq!(
-      Predicate::try_from(format!("wof:placetype = wof:placetype"))?.eval(&wof_obj)?,
-      Predicate::Boolean(true)
-    );
-
     Ok(())
   }
 }
