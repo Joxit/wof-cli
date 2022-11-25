@@ -7,6 +7,8 @@ extern crate lazy_static;
 mod commands;
 mod git;
 mod repo;
+pub mod expression;
+pub use self::expression::*;
 mod ser;
 pub use self::ser::*;
 mod de;

@@ -1,7 +1,6 @@
+use super::tokenizer::{tokenize, Token};
+use super::Predicate;
 use std::convert::TryInto;
-
-use crate::utils::expression::tokenizer::{tokenize, Token};
-use crate::utils::expression::Predicate;
 
 pub fn parse(expression: String) -> Result<Predicate, String> {
   let tokens = tokenize(expression);

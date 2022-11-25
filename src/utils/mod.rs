@@ -23,7 +23,6 @@
 //!```
 
 pub mod compute;
-pub mod expression;
 mod float_format;
 #[cfg(feature = "with-gdal")]
 mod gdal;

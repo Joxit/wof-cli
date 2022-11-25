@@ -18,6 +18,8 @@
 //!assert_eq!(geojson.id, 0);
 //!```
 
+pub mod expression;
+pub use self::expression::*;
 mod ser;
 pub use self::ser::*;
 mod de;
