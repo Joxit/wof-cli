@@ -1,6 +1,9 @@
+use crate::expression::{Evaluate, Predicate};
 use crate::repo::Walk;
 use crate::sqlite;
 use crate::utils::ResultExit;
+use log::error;
+use std::convert::TryFrom;
 use std::io::{Read, Write};
 use std::path::Path;
 use structopt::StructOpt;
@@ -19,20 +22,32 @@ pub struct List {
   /// Print minified geojson instead of path.
   #[structopt(long = "print-geojson")]
   pub print_geojson: bool,
+  /// Filter lister geojson with expression.
+  #[structopt(long = "filter")]
+  pub filter: Option<String>,
 }
 
 impl List {
   pub fn exec(&self) {
+    let predicate: Predicate = if let Some(predicate) = &self.filter {
+      if !self.print_geojson {
+        error!("When --filter is used, you must also use --print-geojson");
+        std::process::exit(1);
+      }
+      Predicate::try_from(predicate.clone()).expect_exit("Inccorect expression")
+    } else {
+      Predicate::Boolean(true)
+    };
     for directory in &self.directories {
       if Path::new(directory).is_dir() {
-        self.walk_directory(directory)
+        self.walk_directory(directory, &predicate)
       } else {
-        self.list_sqlite(directory)
+        self.list_sqlite(directory, &predicate)
       }
     }
   }
 
-  pub fn walk_directory(&self, directory: &String) {
+  pub fn walk_directory(&self, directory: &String, predicate: &Predicate) {
     for entry in Walk::new(directory.to_string(), self.alt, !self.no_deprecated) {
       if let Ok(path) = entry {
         if self.print_geojson {
@@ -40,8 +55,13 @@ impl List {
           let mut buffer = String::new();
           file.read_to_string(&mut buffer).exit_silently();
           let json = crate::parse_string_to_json(&buffer).exit_silently();
-          crate::ser::json_to_writer(&json, &mut std::io::stdout()).exit_silently();
-          writeln!(std::io::stdout(), "").exit_silently()
+          if let Predicate::Boolean(true) = json
+            .eval(&predicate)
+            .expect_exit("Can't evaluate expression")
+          {
+            crate::ser::json_to_writer(&json, &mut std::io::stdout()).exit_silently();
+            writeln!(std::io::stdout(), "").exit_silently()
+          }
         } else {
           writeln!(std::io::stdout(), "{}", path.path().display()).exit_silently();
         }
@@ -49,7 +69,7 @@ impl List {
     }
   }
 
-  pub fn list_sqlite(&self, directory: &String) {
+  pub fn list_sqlite(&self, directory: &String, predicate: &Predicate) {
     let sqlite = sqlite::SQLite::new(
       directory,
       sqlite::SQLiteOpts {
@@ -63,7 +83,7 @@ impl List {
 
     if self.print_geojson {
       sqlite
-        .write_all_geojsons(&mut std::io::stdout())
+        .write_all_geojsons(&mut std::io::stdout(), &predicate)
         .expect_exit("Can't write to stdout");
     } else {
       sqlite

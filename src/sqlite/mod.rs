@@ -1,5 +1,6 @@
 //! Module to create and add documents to WOF SQLites databases.
 use crate::std::StringifyError;
+use crate::{Evaluate, Predicate};
 use crate::wof::WOFGeoJSON;
 use json::JsonValue;
 use rusqlite::{params, Connection, Error as SQLiteError};
@@ -278,7 +279,7 @@ impl SQLite {
     Ok(())
   }
 
-  pub fn write_all_geojsons<W: Write>(&self, mut writer: &mut W) -> Result<(), String> {
+  pub fn write_all_geojsons<W: Write>(&self, mut writer: &mut W, predicate: &Predicate) -> Result<(), String> {
     let sql = if !self.opts.alt && !self.opts.deprecated {
       statements::SELECT_ALL_GEOJSONS_WITHOUT_ALT_AND_DEPRECATED
     } else if !self.opts.alt {
@@ -302,8 +303,10 @@ impl SQLite {
     for body in rows {
       let body = std::str::from_utf8(&body.unwrap()).unwrap().to_string();
       let json = crate::parse_string_to_json(&body).stringify_err("Can't parse geojson body")?;
-      crate::ser::json_to_writer(&json, &mut writer).stringify_err("Can't write to output")?;
-      writeln!(&mut writer, "").stringify_err("Can't write to output")?;
+      if let Predicate::Boolean(true) = json.eval(&predicate)? {
+        crate::ser::json_to_writer(&json, &mut writer).stringify_err("Can't write to output")?;
+        writeln!(&mut writer, "").stringify_err("Can't write to output")?;
+      }
     }
     Ok(())
   }
