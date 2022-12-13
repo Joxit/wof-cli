@@ -139,24 +139,31 @@ impl Patch {
     if let Some(geometry) = patch.get("geometry") {
       original
         .insert("geometry", geometry.clone())
-        .stringify_err("Can't set geometry attribut")?;
+        .stringify_err("Can't set geometry attribute")?;
     }
     if let Some(properties) = patch.get("properties") {
       let original_properties = original
         .as_mut_object()
-        .ok_or("properties key not found attribut")?
+        .ok_or("Original JSON is not a JSON Object")?
         .get_mut("properties")
-        .ok_or("properties key not found attribut")?;
+        .ok_or("The `properties` key is not found")?;
       for (key, value) in properties.entries() {
-        original_properties
-          .insert(key, value.clone())
-          .stringify_err("Can't set geometry attribut")?;
+        if &JsonValue::Null != value {
+          original_properties
+            .insert(key, value.clone())
+            .stringify_err(&format!(
+              "Can't set new property {} with value {}",
+              key, value
+            ))?;
+        } else {
+          original_properties.remove(key);
+        }
       }
     }
     if let Some(bbox) = patch.get("bbox") {
       original
         .insert("bbox", bbox.clone())
-        .stringify_err("Can't set bbox attribut")?;
+        .stringify_err("Can't set bbox attribute")?;
     }
 
     Ok(())
