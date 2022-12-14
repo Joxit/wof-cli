@@ -5,6 +5,7 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 pub enum Completion {
   /// Generates a .bash completion file for the Bourne Again SHell (BASH)
+  /// Save the output in `/etc/bash_completion.d/wof` or `~/.local/share/bash-completion/completions/wof`
   #[structopt(name = "bash")]
   Bash,
   /// Generates a .fish completion file for the Friendly Interactive SHell (fish)
