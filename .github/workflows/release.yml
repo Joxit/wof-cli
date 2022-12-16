@@ -28,6 +28,15 @@ jobs:
       env:
         CRATE_IO_ACCESS_TOKEN: ${{ secrets.CRATE_IO_ACCESS_TOKEN }}
       run: cargo publish --token $CRATE_IO_ACCESS_TOKEN
+    - name: Major tag
+      id: major-tag
+      run: echo "::set-output name=tag::$(git describe --tags | grep -o '^[0-9]*')"
+    - name: Minor tag
+      id: minor-tag
+      run: echo "::set-output name=tag::$(git describe --tags | grep -o '^[0-9]*\.[0-9]*')"
+    - name: Patch tag
+      id: patch-tag
+      run: echo "::set-output name=tag::$(git describe --tags | grep -o '^[0-9]*\.[0-9]*\.[0-9]*')"
     - name: Download kokai
       run: curl -sSL https://github.com/Joxit/kokai/releases/download/$(curl -sSL https://api.github.com/repos/Joxit/kokai/releases/latest | jq -r ".tag_name")/kokai-linux-x86_64 > kokai
     - name: Create Release Note
@@ -65,3 +74,24 @@ jobs:
         asset_path: ./target/release/wof
         asset_content_type: application/octet-stream
         asset_name: wof-linux-x86_64
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Build and push Beta Alpine Version
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/386,linux/amd64,linux/arm/v7,linux/arm64
+        push: true
+        tags: |
+          joxit/wof:latest
+          joxit/wof:${{steps.major-tag.outputs.tag}}
+          joxit/wof:${{steps.minor-tag.outputs.tag}}
+          joxit/wof:${{steps.patch-tag.outputs.tag}}
