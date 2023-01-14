@@ -43,7 +43,7 @@ jobs:
           joxit/wof:latest
           joxit/wof:${{steps.current-tag.outputs.tag}}
     - name: Build image main and push
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       uses: docker/build-push-action@v2
       with:
         context: .
