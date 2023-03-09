@@ -148,15 +148,10 @@ impl Patch {
         .get_mut("properties")
         .ok_or("The `properties` key is not found")?;
       for (key, value) in properties.entries() {
-        if &JsonValue::Null != value {
-          original_properties
-            .insert(key, value.clone())
-            .stringify_err(&format!(
-              "Can't set new property {} with value {}",
-              key, value
-            ))?;
+        if key == "name:*" {
+          Patch::apply_patch_all_names(original_properties, &value)?;
         } else {
-          original_properties.remove(key);
+          Patch::set_property_value(original_properties, key, &value)?;
         }
       }
     }
@@ -172,5 +167,37 @@ impl Patch {
   fn get_source(original: &JsonValue) -> Result<String, String> {
     let wof = WOFGeoJSON::as_valid_wof_geojson(&original)?;
     Ok(wof.get_source())
+  }
+
+  fn set_property_value(
+    original_properties: &mut JsonValue,
+    key: &str,
+    value: &JsonValue,
+  ) -> Result<(), String> {
+    if &JsonValue::Null != value {
+      original_properties
+        .insert(key, value.clone())
+        .stringify_err(&format!(
+          "Can't set new property {} with value {}",
+          key, value
+        ))?;
+    } else {
+      original_properties.remove(key);
+    }
+    Ok(())
+  }
+
+  fn apply_patch_all_names(
+    original_properties: &mut JsonValue,
+    value: &JsonValue,
+  ) -> Result<(), String> {
+    for key in original_properties
+      .keys()
+      .iter()
+      .filter(|key| key.starts_with("name:"))
+    {
+      Patch::set_property_value(original_properties, key, &value)?
+    }
+    Ok(())
   }
 }
