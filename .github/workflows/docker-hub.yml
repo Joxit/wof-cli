@@ -41,7 +41,9 @@ jobs:
         push: true
         tags: |
           joxit/wof:latest
-          joxit/wof:${{steps.current-tag.outputs.tag}}
+          joxit/wof:${{steps.major-tag.outputs.tag}}
+          joxit/wof:${{steps.minor-tag.outputs.tag}}
+          joxit/wof:${{steps.patch-tag.outputs.tag}}
     - name: Build image main and push
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       uses: docker/build-push-action@v2
@@ -51,7 +53,5 @@ jobs:
         platforms: linux/386,linux/amd64,linux/arm64
         push: true
         tags: |
-          joxit/wof:latest
-          joxit/wof:${{steps.major-tag.outputs.tag}}
-          joxit/wof:${{steps.minor-tag.outputs.tag}}
-          joxit/wof:${{steps.patch-tag.outputs.tag}}
+          joxit/wof:main
+          joxit/wof:master
