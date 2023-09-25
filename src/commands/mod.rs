@@ -5,6 +5,7 @@ use crate::commands::fetch::Fetch;
 use crate::commands::install::Install;
 use crate::commands::list::List;
 use crate::commands::patch::Patch;
+use crate::commands::fix::FixCommand;
 use crate::commands::print::Print;
 use crate::std::StringifyError;
 use crate::utils::ResultExit;
@@ -19,6 +20,7 @@ mod build;
 mod completion;
 mod export;
 mod fetch;
+mod fix;
 mod install;
 mod list;
 mod patch;
@@ -50,6 +52,10 @@ pub enum Command {
   /// List all WOF document in the directory.
   #[structopt(name = "list")]
   List(List),
+  /// Fix WOF data with some custom rules.
+  #[structopt(name = "fix")]
+  Fix(FixCommand),
+  
 }
 
 impl Command {
@@ -68,6 +74,7 @@ impl Command {
       Command::Print(executable) => executable.exec(),
       Command::List(executable) => executable.exec(),
       Command::Build(executable) => executable.exec(),
+      Command::Fix(executable) => executable.exec(),
     }
   }
 

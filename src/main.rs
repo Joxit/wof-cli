@@ -5,15 +5,16 @@ use structopt::StructOpt;
 extern crate lazy_static;
 
 mod commands;
+pub mod expression;
 mod git;
 mod repo;
-pub mod expression;
 pub use self::expression::*;
 mod ser;
 pub use self::ser::*;
 mod de;
 pub use self::de::*;
 pub mod export;
+mod fix;
 mod postgres;
 mod shapefile;
 mod sqlite;
