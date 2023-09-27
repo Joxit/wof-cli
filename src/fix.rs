@@ -24,15 +24,17 @@ impl Fix {
     Fix { population: true }
   }
 
-  pub fn fix(&self, obj: &mut JsonValue) -> Result<(), String> {
+  pub fn fix(&self, obj: &mut JsonValue) -> Result<bool, String> {
+    let mut has_changed = false;
     if self.population {
-      self.fix_population_mut(obj)?;
+      has_changed = has_changed || self.fix_population_mut(obj)?;
     }
 
-    Ok(())
+    Ok(has_changed)
   }
 
-  fn fix_population_mut(&self, obj: &mut JsonValue) -> Result<(), String> {
+  fn fix_population_mut(&self, obj: &mut JsonValue) -> Result<bool, String> {
+    let mut has_changed = false;
     let properties = obj
       .as_mut_object()
       .ok_or(format!("Input sinot a GeoJSON"))?
@@ -44,14 +46,29 @@ impl Fix {
     POPULATION_PROPERTIES
       .iter()
       .for_each(|key| match properties.get(key) {
-        Some(JsonValue::String(s)) => properties.insert(key, Fix::string_to_number(s)),
-        Some(JsonValue::Short(s)) => properties.insert(key, Fix::string_to_number(&s.to_string())),
+        Some(JsonValue::String(s)) => {
+          if let Some(new_value) = fix_strigified_number(s) {
+            properties.insert(key, JsonValue::from(new_value));
+            has_changed = true;
+          }
+        }
+        Some(JsonValue::Short(s)) => {
+          if let Some(new_value) = fix_strigified_number(&s.to_string()) {
+            properties.insert(key, JsonValue::from(new_value));
+            has_changed = true;
+          }
+        }
         _ => {}
       });
-    Ok(())
+    Ok(has_changed)
   }
+}
 
-  fn string_to_number(s: &String) -> JsonValue {
-    JsonValue::from(s.replace(",", ""))
+fn fix_strigified_number(value: &String) -> Option<String> {
+  let new_value = value.replace(",", "");
+  if *value != new_value {
+    Some(new_value)
+  } else {
+    None
   }
 }
