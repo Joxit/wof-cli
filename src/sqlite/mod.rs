@@ -1,7 +1,7 @@
 //! Module to create and add documents to WOF SQLites databases.
 use crate::std::StringifyError;
-use crate::{Evaluate, Predicate};
 use crate::wof::WOFGeoJSON;
+use crate::{Evaluate, Predicate};
 use json::JsonValue;
 use rusqlite::{params, Connection, Error as SQLiteError};
 use std::io::Write;
@@ -279,7 +279,11 @@ impl SQLite {
     Ok(())
   }
 
-  pub fn write_all_geojsons<W: Write>(&self, mut writer: &mut W, predicate: &Predicate) -> Result<(), String> {
+  pub fn write_all_geojsons<W: Write>(
+    &self,
+    mut writer: &mut W,
+    predicate: &Predicate,
+  ) -> Result<(), String> {
     let sql = if !self.opts.alt && !self.opts.deprecated {
       statements::SELECT_ALL_GEOJSONS_WITHOUT_ALT_AND_DEPRECATED
     } else if !self.opts.alt {

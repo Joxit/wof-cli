@@ -2,8 +2,8 @@ mod de;
 mod evaluate;
 mod tokenizer;
 
-pub use evaluate::Evaluate;
 use super::expression::de::parse;
+pub use evaluate::Evaluate;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]

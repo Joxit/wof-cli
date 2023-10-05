@@ -2,10 +2,10 @@ use crate::commands::build::Build;
 use crate::commands::completion::Completion;
 use crate::commands::export::Export;
 use crate::commands::fetch::Fetch;
+use crate::commands::fix::FixCommand;
 use crate::commands::install::Install;
 use crate::commands::list::List;
 use crate::commands::patch::Patch;
-use crate::commands::fix::FixCommand;
 use crate::commands::print::Print;
 use crate::std::StringifyError;
 use crate::utils::ResultExit;
@@ -55,7 +55,6 @@ pub enum Command {
   /// Fix WOF data with some custom rules.
   #[structopt(name = "fix")]
   Fix(FixCommand),
-  
 }
 
 impl Command {
