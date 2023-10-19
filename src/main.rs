@@ -1,5 +1,5 @@
 use crate::commands::Command;
-use structopt::StructOpt;
+use clap::{Args, CommandFactory, Parser};
 
 #[macro_use]
 extern crate lazy_static;
@@ -26,15 +26,23 @@ pub use self::wof::WOFGeoJSON;
 pub use json::object::Object as JsonObject;
 pub use json::JsonValue;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "wof", author, about)]
-pub struct ApplicationArguments {
-  #[structopt(subcommand)]
+#[derive(Parser, Debug)]
+#[structopt(name = "wof", author, version, about)]
+pub struct Wof {
+  #[command(subcommand)]
   pub command: Command,
 }
 
+impl Wof {
+  pub fn display_help(cmd: &str) {
+    let clap = Self::augment_args(Self::command());
+    let args = format!("{} {} --help", clap, cmd);
+    clap.get_matches_from(args.split(" "));
+  }
+}
+
 fn main() {
-  let opt = ApplicationArguments::from_args();
+  let opt = Wof::parse();
 
   opt.command.exec();
 }

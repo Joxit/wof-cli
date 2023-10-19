@@ -5,21 +5,21 @@ use crate::sqlite::{SQLite, SQLiteOpts};
 use crate::std::StringifyError;
 use crate::utils::{self, JsonUtils, ResultExit};
 use crate::{JsonObject, JsonValue, WOFGeoJSON};
+use clap::Parser;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::string::String;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Patch {
   /// The original file where we apply patches.
   pub original: String,
   /// The patch file or directory to apply, read from standard input by default.
-  #[structopt(short = "i", long = "input")]
+  #[arg(short = 'i', long = "input")]
   pub patchfile: Option<String>,
   /// Don't prettify the geojson.
-  #[structopt(long = "no-pretty")]
+  #[arg(long = "no-pretty")]
   pub no_pretty: bool,
 }
 

@@ -1,32 +1,33 @@
 use crate::commands::assert_directory_exists;
 use crate::sqlite;
 use crate::utils::ResultExit;
+use clap::builder::PossibleValuesParser;
+use clap::Parser;
 use log::info;
 use std::path::Path;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct SQLite {
   /// WOF data directories
-  #[structopt(default_value = ".")]
+  #[arg(default_value = ".")]
   pub directories: Vec<String>,
   /// Where to store the final build file. If empty the code will attempt to create whosonfirst-data-latest.db the current working directory.
-  #[structopt(long = "out", default_value = "whosonfirst-data-latest.db")]
+  #[arg(long = "out", default_value = "whosonfirst-data-latest.db")]
   pub out: String,
   /// Don't insert deprecated features.
-  #[structopt(long = "no-deprecated")]
+  #[arg(long = "no-deprecated")]
   pub no_deprecated: bool,
   /// Don't prettify the geojson.
-  #[structopt(long = "no-pretty")]
+  #[arg(long = "no-pretty")]
   pub no_pretty: bool,
   /// Preset for pelias use. Will insert only in geojson and spr tables.
-  #[structopt(long = "preset", possible_values = &["pelias"])]
+  #[arg(long = "preset", value_parser = PossibleValuesParser::new(&["pelias"]))]
   pub preset: Option<String>,
   /// Display timings during the build process, implies verbose.
-  #[structopt(long = "timings")]
+  #[arg(long = "timings")]
   pub timings: bool,
   /// Activate verbose mode.
-  #[structopt(short = "v", long = "verbose")]
+  #[arg(short = 'v', long = "verbose")]
   pub verbose: bool,
 }
 

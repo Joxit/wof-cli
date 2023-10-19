@@ -2,25 +2,25 @@ pub use crate::commands::build::postgres::Postgres;
 pub use crate::commands::build::shapefile::Shapefile;
 pub use crate::commands::build::sqlite::SQLite;
 use crate::repo::Walk;
+use clap::Parser;
 use log::{error, info};
 use std::path::PathBuf;
 use std::time::SystemTime;
-use structopt::StructOpt;
 
 mod postgres;
 mod shapefile;
 mod sqlite;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum Build {
   /// Who's On First documents to PostgreSQL database.
-  #[structopt(name = "postgres")]
+  #[command(name = "postgres")]
   Postgres(Postgres),
   /// Who's On First documents to ESRI shapefiles.
-  #[structopt(name = "shapefile")]
+  #[command(name = "shapefile")]
   Shapefile(Shapefile),
   /// Who's On First documents to SQLite database.
-  #[structopt(name = "sqlite")]
+  #[command(name = "sqlite")]
   SQLite(SQLite),
 }
 

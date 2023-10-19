@@ -2,28 +2,28 @@ use crate::expression::{Evaluate, Predicate};
 use crate::repo::Walk;
 use crate::sqlite;
 use crate::utils::ResultExit;
+use clap::Parser;
 use log::error;
 use std::convert::TryFrom;
 use std::io::{Read, Write};
 use std::path::Path;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct List {
   /// Paths to WOF documents.
-  #[structopt(default_value = ".")]
+  #[arg(default_value = ".")]
   pub directories: Vec<String>,
   /// List also alternate geometries.
-  #[structopt(long = "alt")]
+  #[arg(long = "alt")]
   pub alt: bool,
   /// Don't print deprecated features.
-  #[structopt(long = "no-deprecated")]
+  #[arg(long = "no-deprecated")]
   pub no_deprecated: bool,
   /// Print minified geojson instead of path.
-  #[structopt(long = "print-geojson")]
+  #[arg(long = "print-geojson")]
   pub print_geojson: bool,
   /// Filter lister geojson with expression.
-  #[structopt(long = "filter")]
+  #[arg(long = "filter")]
   pub filter: Option<String>,
 }
 

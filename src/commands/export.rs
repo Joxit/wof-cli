@@ -1,47 +1,48 @@
 use crate::commands::Command;
 use crate::git::Git;
 use crate::utils::ResultExit;
+use clap::builder::PossibleValuesParser;
+use clap::Parser;
 use std::default::Default;
-use structopt::StructOpt;
 
 static BINARY: &'static str = "wof-exportify";
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Export {
   /// Where to write the export, on stdout or flatfile (needs source)
-  #[structopt(short = "e", long = "exporter", possible_values = &["flatfile", "stdout"])]
+  #[arg(short = 'e', long = "exporter", value_parser = PossibleValuesParser::new(&["flatfile", "stdout"]))]
   pub exporter: Option<String>,
   /// WOF data folder where are stored GeoJSONs to exportify
-  #[structopt(short = "s", long = "source")]
+  #[arg(short = 's', long = "source")]
   pub source: Option<String>,
   /// The WOF id of the object to export
-  #[structopt(short = "i", long = "id")]
+  #[arg(short = 'i', long = "id")]
   pub id: Option<u32>,
   /// Path of the object to export
-  #[structopt(short = "p", long = "path")]
+  #[arg(short = 'p', long = "path")]
   pub path: Option<String>,
-  #[structopt(short = "c", long = "collection")]
+  #[arg(short = 'c', long = "collection")]
   pub collection: bool,
-  #[structopt(short = "a", long = "alt")]
+  #[arg(short = 'a', long = "alt")]
   pub alt: Option<String>,
-  #[structopt(short = "d", long = "display")]
+  #[arg(short = 'd', long = "display")]
   pub display: Option<String>,
   /// Read stdin for the object to export
-  #[structopt(long = "stdin")]
+  #[arg(long = "stdin")]
   pub stdin: bool,
   /// Run export on all files of a specific commit/ref (needs git repository)
-  #[structopt(long = "commit")]
+  #[arg(long = "commit")]
   pub commit: Option<String>,
   /// Run export on all stagged files (needs git repository)
-  #[structopt(long = "stagged")]
+  #[arg(long = "stagged")]
   pub stagged: bool,
   /// Activate debug mode
-  #[structopt(long = "debug")]
+  #[arg(long = "debug")]
   pub debug: bool,
   /// Activate verbose mode
-  #[structopt(short = "v", long = "verbose")]
+  #[arg(short = 'v', long = "verbose")]
   pub verbose: bool,
-  #[structopt(skip)]
+  #[arg(skip)]
   pub exit: bool,
 }
 

@@ -2,45 +2,46 @@ use crate::shapefile;
 use crate::utils::ResultExit;
 use crate::wof::WOFGeoJSON;
 use crate::JsonValue;
+use clap::builder::PossibleValuesParser;
+use clap::Parser;
 use log::{error, info};
 use std::path::Path;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Shapefile {
-  #[structopt(default_value = ".")]
+  #[arg(default_value = ".")]
   pub directories: Vec<String>,
   /// Include only records that belong to this ID. You may pass multiple -belongs-to flags.
-  #[structopt(long = "belongs-to")]
+  #[arg(long = "belongs-to")]
   pub belongs_to: Option<Vec<i32>>,
   /// Exclude records of this placetype. You may pass multiple -exclude-placetype flags.
-  #[structopt(long = "exclude-placetype")]
+  #[arg(long = "exclude-placetype")]
   pub exclude: Option<Vec<String>>,
   /// Include only records of this placetype. You may pass multiple -include-placetype flags.
-  #[structopt(long = "include-placetype")]
+  #[arg(long = "include-placetype")]
   pub include: Option<Vec<String>>,
   /// The mode to use importing data.
-  #[structopt(
+  #[arg(
       long = "mode",
-      possible_values = &["directory", "feature", "feature-collection", "files", "geojson-ls", "meta", "path", "repo", "sqlite"],
+      value_parser = PossibleValuesParser::new(&["directory", "feature", "feature-collection", "files", "geojson-ls", "meta", "path", "repo", "sqlite"]),
       default_value = "repo")]
   pub mode: String,
   /// Where to write the new shapefile.
-  #[structopt(long = "out", default_value = "whosonfirst-data-latest.shp")]
+  #[arg(long = "out", default_value = "whosonfirst-data-latest.shp")]
   pub out: String,
   // todo: "MULTIPOINT"
   /// The shapefile type to use indexing data.
-  #[structopt(
+  #[arg(
       long = "shapetype",
-      possible_values = &["POINT", "POLYLINE", "POLYGON"],
-      case_insensitive = false,
+      value_parser = PossibleValuesParser::new(&["POINT", "POLYLINE", "POLYGON"]),
+      ignore_case = false,
       default_value = "POLYGON")]
   pub shapetype: String,
   /// Activate verbose mode.
-  #[structopt(short = "v", long = "verbose")]
+  #[arg(short = 'v', long = "verbose")]
   pub verbose: bool,
   /// Display timings during and after indexing
-  #[structopt(long = "timings")]
+  #[arg(long = "timings")]
   pub timings: bool,
 }
 

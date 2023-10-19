@@ -1,59 +1,59 @@
 use crate::postgres;
 use crate::utils::ResultExit;
+use clap::Parser;
 use log::info;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Postgres {
   /// WOF data directories to import
-  #[structopt(default_value = ".")]
+  #[arg(default_value = ".")]
   pub directories: Vec<String>,
   /// The IP or hostname of the postgreSQL database.
-  #[structopt(long = "host", default_value = "127.0.0.1", env = "WOF_PG_HOST")]
+  #[arg(long = "host", default_value = "127.0.0.1", env = "WOF_PG_HOST")]
   pub host: String,
   /// The postgreSQL user name to use.
-  #[structopt(
-    short = "u",
+  #[arg(
+    short = 'u',
     long = "user",
     default_value = "wof",
     env = "WOF_PG_USERNAME"
   )]
   pub user: String,
   /// The postgreSQL database name to use.
-  #[structopt(
-    short = "d",
+  #[arg(
+    short = 'd',
     long = "dbname",
     default_value = "gis",
     env = "WOF_PG_DBNAME"
   )]
   pub dbname: String,
   /// The postgreSQL database port to use.
-  #[structopt(
-    short = "p",
+  #[arg(
+    short = 'p',
     long = "port",
     default_value = "5432",
     env = "WOF_PG_DBNAME"
   )]
   pub port: u16,
   /// The postgreSQL database port to use.
-  #[structopt(short = "W", long = "password", env = "WOF_PG_PASSWORD")]
+  #[arg(short = 'W', long = "password", env = "WOF_PG_PASSWORD")]
   pub password: Option<String>,
   /// The SIRID to use for geometry storage. Default value is 4326, common usage is also 3857.
-  #[structopt(
-    short = "s",
+  #[arg(
+    short = 's',
     long = "srid",
     default_value = "4326",
     env = "WOF_PG_SRID"
   )]
   pub srid: i32,
   /// Don't insert deprecated features.
-  #[structopt(long = "no-deprecated")]
+  #[arg(long = "no-deprecated")]
   pub no_deprecated: bool,
   /// Display timings during the build process, implies verbose.
-  #[structopt(long = "timings")]
+  #[arg(long = "timings")]
   pub timings: bool,
   /// Activate verbose mode.
-  #[structopt(short = "v", long = "verbose")]
+  #[arg(short = 'v', long = "verbose")]
   pub verbose: bool,
 }
 

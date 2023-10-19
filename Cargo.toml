@@ -11,7 +11,12 @@ homepage = "https://github.com/Joxit/wof-cli"
 documentation = "https://docs.rs/wof/"
 readme = "README.md"
 keywords = ["cli"]
-categories = ["command-line-utilities", "database-implementations", "data-structures", "parser-implementations"]
+categories = [
+  "command-line-utilities",
+  "database-implementations",
+  "data-structures",
+  "parser-implementations",
+]
 
 [[bin]]
 name = "wof"
@@ -29,10 +34,11 @@ postgres = "^0.19.3"
 lazy_static = "^1.4.0"
 which = { version = "^4.4.2", optional = true }
 tar = { version = "^0.4.26", optional = true }
-flate2 = { version ="^1.0.13", optional = true }
-structopt = { version = "^0.3", optional = true }
+flate2 = { version = "^1.0.13", optional = true }
 attohttpc = { version = "^0.26.1", optional = true }
 chrono = { version = "^0.4.10", optional = true }
+clap = { version = "^4.4", features = ["derive", "env"], optional = true }
+clap_complete = { version = "^4.4", optional = true }
 
 [dependencies.gdal]
 version = "^0.16"
@@ -54,5 +60,15 @@ version = "0.29.0"
 features = ["bundled"]
 
 [features]
-cli = ["which", "tar", "flate2", "structopt", "attohttpc", "chrono", "log", "git2"]
+cli = [
+  "which",
+  "tar",
+  "flate2",
+  "clap",
+  "clap_complete",
+  "attohttpc",
+  "chrono",
+  "log",
+  "git2",
+]
 with-gdal = ["gdal"]

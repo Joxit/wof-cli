@@ -3,17 +3,16 @@ use crate::commands::completion::Completion;
 use crate::commands::export::Export;
 use crate::commands::fetch::Fetch;
 use crate::commands::fix::FixCommand;
-use crate::commands::install::Install;
 use crate::commands::list::List;
 use crate::commands::patch::Patch;
 use crate::commands::print::Print;
 use crate::std::StringifyError;
 use crate::utils::ResultExit;
+use clap::Parser;
 use flate2::read::GzDecoder;
 use regex::Regex;
 use std::path::Path;
 use std::result::Result;
-use structopt::StructOpt;
 use tar::Archive;
 
 mod build;
@@ -21,52 +20,42 @@ mod completion;
 mod export;
 mod fetch;
 mod fix;
-mod install;
 mod list;
 mod patch;
 mod print;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum Command {
   /// Build a WOF database (sqlite or shapefile).
-  #[structopt(name = "build")]
+  #[command(name = "build", subcommand)]
   Build(Build),
   /// Export tools for the Who's On First documents.
-  #[structopt(name = "export")]
+  #[command(name = "export")]
   Export(Export),
-  /// Install what you need to use this CLI (needs python2 and go).
-  #[structopt(name = "install")]
-  Install(Install),
   /// Generate autocompletion file for your shell.
-  #[structopt(name = "completion")]
+  #[command(name = "completion", subcommand)]
   Completion(Completion),
   /// Fetch WOF data from github.
-  #[structopt(name = "fetch")]
+  #[command(name = "fetch")]
   Fetch(Fetch),
   /// Patch WOF documents with json. Can be via stdin or cmd argument.
-  #[structopt(name = "patch")]
+  #[command(name = "patch")]
   Patch(Patch),
   /// Print to stdout WOF document by id. Can be via stdin or cmd argument.
-  #[structopt(name = "print")]
+  #[command(name = "print")]
   Print(Print),
   /// List all WOF document in the directory.
-  #[structopt(name = "list")]
+  #[command(name = "list")]
   List(List),
   /// Fix WOF data with some custom rules.
-  #[structopt(name = "fix")]
+  #[command(name = "fix")]
   Fix(FixCommand),
 }
 
 impl Command {
   pub fn exec(&self) {
-    let home = std::env::var("HOME").expect("No $HOME found in environment variables");
-
-    std::env::set_var("PATH", Command::get_path_env(home.clone()));
-    std::env::set_var("PYTHONUSERBASE", format!("{}/.wof/", home));
-
     match self {
       Command::Export(executable) => executable.exec(),
-      Command::Install(executable) => executable.exec(),
       Command::Completion(executable) => executable.exec(),
       Command::Fetch(executable) => executable.exec(),
       Command::Patch(executable) => executable.exec(),
@@ -114,13 +103,6 @@ impl Command {
   ) {
     cmd_args.push(raw_cmd.to_string());
     cmd_args.push(opt.to_string());
-  }
-
-  pub fn get_path_env(home: String) -> String {
-    match std::env::var("PATH") {
-      Ok(val) => format!("{}/.wof/bin:{}", home, val),
-      Err(_) => format!("{}/.wof/bin:{}/bin:/bin", home, home),
-    }
   }
 
   pub fn assert_cmd_exists(binary: &'static str, install: &'static str) {

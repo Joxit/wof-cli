@@ -2,33 +2,33 @@ use crate::ser::{json_to_writer, json_to_writer_pretty};
 use crate::sqlite::{SQLite, SQLiteOpts};
 use crate::utils::ResultExit;
 use crate::utils::{self, JsonUtils};
+use clap::Parser;
 use json::JsonValue;
 use log::error;
 use std::io::{Read, Write};
 use std::string::String;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Print {
   /// Ids or paths to WOF documents to print
   pub ids: Vec<String>,
   /// Remove the geometry before pretty print.
-  #[structopt(long = "no-geom")]
+  #[arg(long = "no-geom")]
   pub no_geom: bool,
   /// Print minified json.
-  #[structopt(long = "no-pretty")]
+  #[arg(long = "no-pretty")]
   pub no_pretty: bool,
   /// Send the raw data, do not pretty print it. You can't use filters with this.
-  #[structopt(short = "r", long = "raw")]
+  #[arg(short = 'r', long = "raw")]
   pub raw: bool,
   /// Exclude some properties from the input. `wof:` will exclude all properties starting with `wof:`
-  #[structopt(short = "e", long = "exclude")]
+  #[arg(short = 'e', long = "exclude")]
   pub excludes: Vec<String>,
   /// Include some properties from the input. `wof:` will include only properties starting with `wof:`
-  #[structopt(short = "i", long = "include")]
+  #[arg(short = 'i', long = "include")]
   pub includes: Vec<String>,
   /// Print geojson from SQLite database instead of repository
-  #[structopt(long = "sqlite")]
+  #[arg(long = "sqlite")]
   pub sqlite: Option<String>,
 }
 

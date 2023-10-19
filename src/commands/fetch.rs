@@ -1,29 +1,30 @@
 use crate::commands::{download_tar_gz_stream_geojson, download_tar_gz_strip, output_pipe};
 use crate::utils;
 use crate::utils::ResultExit;
+use clap::builder::PossibleValuesParser;
+use clap::Parser;
 use log::{error, info};
 use std::path::Path;
 use std::time::SystemTime;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Fetch {
   /// Ouput directory to download WOF documents
-  #[structopt(short = "o", long = "out", default_value = ".")]
+  #[arg(short = 'o', long = "out", default_value = ".")]
   pub out: String,
   /// Should download postalcodes repositories
-  #[structopt(long = "postalcode", possible_values = &["true", "false"])]
+  #[arg(long = "postalcode", value_parser = PossibleValuesParser::new(&["true", "false"]))]
   pub postalcode: Option<bool>,
   /// Should download admin repositories, default true
-  #[structopt(long = "admin", possible_values = &["true", "false"])]
+  #[arg(long = "admin", value_parser =PossibleValuesParser::new( &["true", "false"]))]
   pub admin: Option<bool>,
   /// Two letters country code to download. No values will download all repositories.
   pub countries: Vec<String>,
   /// Display timings during the download process, implies verbose.
-  #[structopt(long = "timings")]
+  #[arg(long = "timings")]
   pub timings: bool,
   /// Activate verbose mode.
-  #[structopt(short = "v", long = "verbose")]
+  #[arg(short = 'v', long = "verbose")]
   pub verbose: bool,
 }
 

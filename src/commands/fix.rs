@@ -1,15 +1,15 @@
 use crate::fix::Fix;
 use crate::repo::Walk;
 use crate::utils::ResultExit;
+use clap::Parser;
 use log::error;
 use std::fs::File;
 use std::io::{stdin, stdout, Read};
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct FixCommand {
   /// Paths to WOF documents.
-  #[structopt(default_value = ".")]
+  #[arg(default_value = ".")]
   pub directories: Vec<String>,
 }
 
