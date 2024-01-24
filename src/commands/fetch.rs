@@ -13,10 +13,10 @@ pub struct Fetch {
   #[arg(short = 'o', long = "out", default_value = ".")]
   pub out: String,
   /// Should download postalcodes repositories
-  #[arg(long = "postalcode", value_parser = PossibleValuesParser::new(&["true", "false"]))]
+  #[arg(long = "postalcode", default_value = "false")]
   pub postalcode: Option<bool>,
   /// Should download admin repositories, default true
-  #[arg(long = "admin", value_parser =PossibleValuesParser::new( &["true", "false"]))]
+  #[arg(long = "admin", default_value = "true")]
   pub admin: Option<bool>,
   /// Two letters country code to download. No values will download all repositories.
   pub countries: Vec<String>,
