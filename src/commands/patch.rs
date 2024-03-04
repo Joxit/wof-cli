@@ -21,6 +21,9 @@ pub struct Patch {
   /// Don't prettify the geojson.
   #[arg(long = "no-pretty")]
   pub no_pretty: bool,
+  /// Continue on data not found
+  #[arg(long = "ignore-not-found", default_value = "false")]
+  pub ignore_not_found: bool,
 }
 
 impl Patch {
@@ -105,10 +108,16 @@ impl Patch {
       .ok_or("The key `id` must be an integer")?;
 
     if let Some(sqlite) = sqlite {
-      let mut original_json = sqlite
+      let original_json = sqlite
         .get_geojson_by_id(id)
         .stringify_err(&format!("Something goes wrong on id {}", id))?
-        .ok_or(&format!("GeoJSON {} not found in {}", id, self.original))?;
+        .ok_or(format!("GeoJSON {} not found in {}", id, self.original));
+
+      if self.ignore_not_found && original_json.is_err() {
+        return Ok(());
+      }
+
+      let mut original_json = original_json?;
       let original_source = Patch::get_source(&original_json)?;
       Patch::apply_patch_to_original(&json, &mut original_json)
         .stringify_err(&format!("Can't apply patch on id {}", id))?;
@@ -117,7 +126,13 @@ impl Patch {
       sqlite.add(wof)?;
     } else {
       let path = utils::get_geojson_path_from_id(&self.original, id)
-        .ok_or(&format!("GeoJSON {} not found in {}", id, self.original))?;
+        .ok_or(format!("GeoJSON {} not found in {}", id, self.original));
+
+      if self.ignore_not_found && path.is_err() {
+        return Ok(());
+      }
+
+      let path = path?;
       let mut original_json = parse_file_to_json(path.clone())
         .stringify_err(&format!("Can't open file id {} from {}", id, self.original))?;
       Patch::apply_patch_to_original(&json, &mut original_json)
