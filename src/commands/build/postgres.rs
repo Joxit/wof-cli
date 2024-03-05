@@ -32,7 +32,7 @@ pub struct Postgres {
     short = 'p',
     long = "port",
     default_value = "5432",
-    env = "WOF_PG_DBNAME"
+    env = "WOF_PG_PORT"
   )]
   pub port: u16,
   /// The postgreSQL database port to use.
