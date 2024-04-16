@@ -1,7 +1,7 @@
+use crate::export::export_json_value;
 use crate::ser::{json_to_writer, json_to_writer_pretty};
 use crate::sqlite::{SQLite, SQLiteOpts};
-use crate::utils::ResultExit;
-use crate::utils::{self, JsonUtils};
+use crate::utils::{self, JsonUtils, ResultExit};
 use clap::Parser;
 use json::JsonValue;
 use log::error;
@@ -27,6 +27,9 @@ pub struct Print {
   /// Include some properties from the input. `wof:` will include only properties starting with `wof:`
   #[arg(short = 'i', long = "include")]
   pub includes: Vec<String>,
+  /// Re compute all fields of the geojson before print
+  #[arg(long = "compute")]
+  pub compute: bool,
   /// Print geojson from SQLite database instead of repository
   #[arg(long = "sqlite")]
   pub sqlite: Option<String>,
@@ -87,7 +90,14 @@ impl Print {
           .read_to_string(&mut buffer)
           .expect_exit(message_error.as_str());
         let mut json = crate::parse_string_to_json(&buffer).expect_exit(message_error.as_str());
-        self.print_json(&mut json, &message_error);
+        if self.compute {
+          self.print_json(
+            &mut export_json_value(&json).expect_exit(message_error.as_str()),
+            &message_error,
+          )
+        } else {
+          self.print_json(&mut json, &message_error)
+        }
       }
     } else {
       error!("Skipping {}, does not exists", id);
@@ -100,7 +110,14 @@ impl Print {
       .get_geojson_by_id(id)
       .expect_exit(message_error.as_str());
     if let Some(mut json) = json {
-      self.print_json(&mut json, &message_error)
+      if self.compute {
+        self.print_json(
+          &mut export_json_value(&json).expect_exit(message_error.as_str()),
+          &message_error,
+        )
+      } else {
+        self.print_json(&mut json, &message_error)
+      }
     } else {
       error!("Skipping {}, does not exists", id);
     }

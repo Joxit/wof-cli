@@ -1,0 +1,82 @@
+{
+  "id": 1125326587,
+  "type": "Feature",
+  "properties": {
+    "edtf:cessation":"uuuu",
+    "edtf:inception":"uuuu",
+    "geom:area":0.0,
+    "geom:area_square_m":0.0,
+    "geom:bbox":"55.66667,-21.08333,55.66667,-21.08333",
+    "geom:latitude":-21.08333,
+    "geom:longitude":55.66667,
+    "gn:country":"RE",
+    "gn:fcode":"ADM3",
+    "gn:population":115239,
+    "iso:country":"RE",
+    "lbl:bbox":"55.56667,-21.18333,55.76667,-20.98333",
+    "lbl:latitude":-21.08333,
+    "lbl:longitude":55.66667,
+    "lbl:max_zoom":14.0,
+    "lbl:min_zoom":9.0,
+    "mz:hierarchy_label":1,
+    "mz:is_current":-1,
+    "mz:min_zoom":7.0,
+    "mz:note":"Quattroshapes Point Gazetteer import 20170519",
+    "qs:cessation":12,
+    "qs_pg:aaroncc":"RE",
+    "qs_pg:gn_country":"RE",
+    "qs_pg:gn_fcode":"ADM3",
+    "qs_pg:gn_id":935266,
+    "qs_pg:gn_pop":115239,
+    "qs_pg:name":"Arrondissement de Saint-Benoît",
+    "qs_pg:photos_9r":0,
+    "qs_pg:photos_sr":0,
+    "qs_pg:pop_sr":9,
+    "qs_pg:qs_id":84011,
+    "qs_pg:qs_pg_placetype":"localadmin",
+    "src:geom":"qs_pg",
+    "src:lbl_centroid":"qs_pg",
+    "src:population":"geonames",
+    "wof:belongsto":[
+      102191581,
+      85633147,
+      136253037,
+      85671199
+    ],
+    "wof:breaches":[],
+    "wof:concordances":{
+      "gn:id":935266,
+      "qs_pg:id":84011
+    },
+    "wof:country":"RE",
+    "wof:created":1497044853,
+    "wof:geomhash":"6db792050cb28ecab673fdc4cd8c6f1e",
+    "wof:hierarchy":[
+      {
+        "continent_id":102191581,
+        "country_id":85633147,
+        "empire_id":136253037,
+        "localadmin_id":1125326587,
+        "region_id":85671199
+      }
+    ],
+    "wof:id":1125326587,
+    "wof:lastmodified":1566609740,
+    "wof:name":"Arrondissement de Saint-Benoît",
+    "wof:parent_id":85671199,
+    "wof:placetype":"localadmin",
+    "wof:population":115239,
+    "wof:population_rank":9,
+    "wof:repo":"whosonfirst-data-admin-re",
+    "wof:superseded_by":[],
+    "wof:supersedes":[],
+    "wof:tags":[]
+  },
+  "bbox": [
+    55.66667,
+    -21.08333,
+    55.66667,
+    -21.08333
+],
+  "geometry": {"coordinates":[55.66,-21.08],"type":"Point"}
+}

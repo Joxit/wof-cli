@@ -1,8 +1,8 @@
 use crate::commands::build::Build;
 use crate::commands::completion::Completion;
-use crate::commands::export::Export;
 use crate::commands::fetch::Fetch;
 use crate::commands::fix::FixCommand;
+use crate::commands::git::Git;
 use crate::commands::list::List;
 use crate::commands::patch::Patch;
 use crate::commands::print::Print;
@@ -17,9 +17,9 @@ use tar::Archive;
 
 mod build;
 mod completion;
-mod export;
 mod fetch;
 mod fix;
+mod git;
 mod list;
 mod patch;
 mod print;
@@ -29,15 +29,15 @@ pub enum Command {
   /// Build a WOF database (sqlite or shapefile).
   #[command(name = "build", subcommand)]
   Build(Build),
-  /// Export tools for the Who's On First documents.
-  #[command(name = "export")]
-  Export(Export),
   /// Generate autocompletion file for your shell.
   #[command(name = "completion", subcommand)]
   Completion(Completion),
   /// Fetch WOF data from github.
   #[command(name = "fetch")]
   Fetch(Fetch),
+  /// Git tools for the Who's On First repositories.
+  #[command(name = "git")]
+  Git(Git),
   /// Patch WOF documents with json. Can be via stdin or cmd argument.
   #[command(name = "patch")]
   Patch(Patch),
@@ -55,7 +55,7 @@ pub enum Command {
 impl Command {
   pub fn exec(&self) {
     match self {
-      Command::Export(executable) => executable.exec(),
+      Command::Git(executable) => executable.exec(),
       Command::Completion(executable) => executable.exec(),
       Command::Fetch(executable) => executable.exec(),
       Command::Patch(executable) => executable.exec(),

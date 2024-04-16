@@ -2,7 +2,7 @@ use crate::utils::{GeoCompute, GeoJsonUtils, JsonUtils};
 use json::object::Object;
 use json::{array, JsonValue};
 
-pub fn export_json_value(json: JsonValue) -> Result<JsonValue, String> {
+pub fn export_json_value(json: &JsonValue) -> Result<JsonValue, String> {
   json.assert_is_object()?;
   let geometry = export_geometry(&json)?;
   let properties = export_porperties(&json, &geometry.as_object().unwrap())?;
