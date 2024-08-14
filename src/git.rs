@@ -18,16 +18,6 @@ impl Git {
     };
   }
 
-  pub fn data_dir(&self) -> String {
-    String::from(
-      self
-        .workdir
-        .join("data")
-        .to_str()
-        .expect("Can't convert the workdir to str."),
-    )
-  }
-
   pub fn repository(&self) -> Repository {
     Repository::discover(self.workdir.as_path())
       .expect("This is not a git repository. Should not happen.")
@@ -81,7 +71,7 @@ impl Git {
   }
 
   fn diff_line_to_real_path(&self, line: DiffLine) -> PathBuf {
-    self.workdir.as_path().clone().join(
+    self.workdir.as_path().join(
       std::str::from_utf8(line.content())
         .expect("WOF Elements should be utf-8.")
         .trim(),

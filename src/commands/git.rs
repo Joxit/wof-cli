@@ -1,5 +1,3 @@
-use crate::commands::Command;
-use crate::utils::ResultExit;
 use clap::builder::PossibleValuesParser;
 use clap::Parser;
 use std::default::Default;
@@ -22,7 +20,6 @@ pub struct Git {
 impl Git {
   pub fn exec(&self) {
     let git = crate::git::Git::new();
-    let data_dir = git.data_dir();
     let paths = if let Some(commit) = &self.commit {
       git.get_changes_from_commit(&commit)
     } else {

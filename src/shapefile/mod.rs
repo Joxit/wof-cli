@@ -16,7 +16,6 @@ pub struct Shapefile {
 /// Options for the database, default values are the official configuration.
 #[derive(Debug, Clone)]
 pub struct ShapefileOpts {
-  /// If true, will also process deprecated documents.
   pub deprecated: bool,
   pub shapetype: ShapeType,
 }
@@ -47,6 +46,9 @@ impl Shapefile {
 
   /// Add a WOFGeoJSON document to the shapefile.
   pub fn add(&mut self, wof_obj: WOFGeoJSON) -> Result<(), String> {
+    if !self.opts.deprecated && wof_obj.is_deprecated() {
+      return Ok(());
+    }
     let geom_type = match wof_obj.geometry.get("type") {
       Some(v) => v.as_str(),
       _ => return Err("Trying to add incorect type to shapefile.".to_string()),

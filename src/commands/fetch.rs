@@ -1,7 +1,6 @@
 use crate::commands::{download_tar_gz_stream_geojson, download_tar_gz_strip, output_pipe};
 use crate::utils;
 use crate::utils::ResultExit;
-use clap::builder::PossibleValuesParser;
 use clap::Parser;
 use log::{error, info};
 use std::path::Path;

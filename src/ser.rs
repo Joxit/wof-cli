@@ -15,7 +15,7 @@ impl<'a, W> WOFGenerator<'a, W>
 where
   W: Write,
 {
-  pub fn pretty(writer: &'a mut W) -> WOFGenerator<W> {
+  pub fn pretty(writer: &'a mut W) -> WOFGenerator<'a, W> {
     WOFGenerator {
       writer: writer,
       dent: 0,
@@ -24,7 +24,7 @@ where
     }
   }
 
-  pub fn ugly(writer: &'a mut W) -> WOFGenerator<W> {
+  pub fn ugly(writer: &'a mut W) -> WOFGenerator<'a, W> {
     WOFGenerator {
       writer: writer,
       dent: 0,

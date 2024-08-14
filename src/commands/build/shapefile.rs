@@ -26,6 +26,9 @@ pub struct Shapefile {
       value_parser = PossibleValuesParser::new(&["directory", "feature", "feature-collection", "files", "geojson-ls", "meta", "path", "repo", "sqlite"]),
       default_value = "repo")]
   pub mode: String,
+  /// If true, will also process deprecated documents.
+  #[arg(long = "deprecated")]
+  pub deprecated: bool,
   /// Where to write the new shapefile.
   #[arg(long = "out", default_value = "whosonfirst-data-latest.shp")]
   pub out: String,

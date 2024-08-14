@@ -2,7 +2,6 @@ use crate::fix::Fix;
 use crate::repo::Walk;
 use crate::utils::ResultExit;
 use clap::Parser;
-use log::error;
 use std::fs::File;
 use std::io::{stdin, stdout, Read};
 
@@ -29,7 +28,7 @@ impl FixCommand {
             }
             let mut json_value =
               crate::parse_string_to_json(&input).expect_exit("Malformed json object");
-            fix.fix(&mut json_value);
+            fix.fix(&mut json_value).exit_silently();
             crate::json_to_writer(&json_value, &mut stdout()).exit_silently();
             println!();
           }
@@ -39,7 +38,9 @@ impl FixCommand {
     }
 
     for directory in &self.directories {
-      self.walk_directory(&fix, directory);
+      self
+        .walk_directory(&fix, directory)
+        .expect(&format!("Cannot walk directory {}", directory));
     }
   }
 
