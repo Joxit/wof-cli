@@ -104,17 +104,6 @@ impl Command {
     cmd_args.push(raw_cmd.to_string());
     cmd_args.push(opt.to_string());
   }
-
-  pub fn assert_cmd_exists(binary: &'static str, install: &'static str) {
-    which::which(binary).expect_exit_code(
-      format!(
-        "The command `{}` not found, please run `{}` first",
-        binary, install
-      )
-      .as_ref(),
-      127,
-    );
-  }
 }
 
 pub fn assert_directory_exists<P: AsRef<Path>>(path: P) {

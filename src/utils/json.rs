@@ -44,19 +44,19 @@ pub trait JsonUtils {
   }
   fn as_object(&self) -> Option<&JsonObject> {
     match &self.as_json_value() {
-      JsonValue::Object(ref obj) => Some(obj),
+      JsonValue::Object(obj) => Some(obj),
       _ => None,
     }
   }
   fn as_mut_object(&mut self) -> Option<&mut JsonObject> {
     match self.as_mut_json_value() {
-      JsonValue::Object(ref mut obj) => Some(obj),
+      JsonValue::Object(obj) => Some(obj),
       _ => None,
     }
   }
   fn keys(&self) -> Vec<String> {
     match &self.as_json_value() {
-      JsonValue::Object(ref obj) => {
+      JsonValue::Object(obj) => {
         let mut keys = Vec::new();
         for (k, _) in obj.iter() {
           keys.push(k.to_string());
@@ -68,7 +68,7 @@ pub trait JsonUtils {
   }
   fn as_array(&self) -> Option<&Vec<JsonValue>> {
     match &self.as_json_value() {
-      JsonValue::Array(ref array) => Some(array),
+      JsonValue::Array(array) => Some(array),
       _ => None,
     }
   }

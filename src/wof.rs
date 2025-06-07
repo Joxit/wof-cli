@@ -91,9 +91,9 @@ impl<'a> WOFGeoJSON<'a> {
 
   fn is_property_deprecated(&self, prop: &'static str) -> bool {
     match self.properties.get(prop) {
-      Some(JsonValue::String(ref s)) => s != "uuuu",
-      Some(JsonValue::Boolean(ref b)) => *b,
-      Some(JsonValue::Array(ref a)) => a.len() > 0,
+      Some(JsonValue::String(s)) => s != "uuuu",
+      Some(JsonValue::Boolean(b)) => *b,
+      Some(JsonValue::Array(a)) => a.len() > 0,
       _ => false,
     }
   }

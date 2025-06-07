@@ -36,7 +36,7 @@ where
   pub fn write_object_value_by_key(&mut self, key: &str, value: &JsonValue) -> io::Result<()> {
     match key {
       "bbox" => {
-        if let JsonValue::Array(ref array) = value {
+        if let JsonValue::Array(array) = value {
           self.write_char(b'[')?;
           let mut iter = array.iter();
 
