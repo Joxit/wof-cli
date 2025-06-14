@@ -1,4 +1,4 @@
-FROM rust:1-slim-bookworm as rust-builder
+FROM rust:1-slim-bullseye AS rust-builder
 
 WORKDIR /opt/rust/wof
 RUN apt-get update \
@@ -8,7 +8,7 @@ RUN cargo fetch
 COPY src src
 RUN cargo build --release --features cli
 
-FROM debian:bookworm
+FROM debian:bullseye
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && mkdir /root/.wof

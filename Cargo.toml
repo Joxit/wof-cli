@@ -1,6 +1,6 @@
 [package]
 name = "wof"
-version = "0.2.0"
+version = "1.0.0"
 authors = ["Jones Magloire @Joxit"]
 description = "The Who's On First rust library and command line."
 edition = "2024"
